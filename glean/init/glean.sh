@@ -37,7 +37,9 @@ if [ -n "$CONFIG_DRIVE_LABEL" ]; then
     BLOCKDEV="$(blkid -L ${CONFIG_DRIVE_LABEL})"
     TYPE="$(blkid -t LABEL=${CONFIG_DRIVE_LABEL} -s TYPE -o value)"
     if [[ "${TYPE}" == 'vfat' ]]; then
-        mount -o umask=0077 "${BLOCKDEV}" /mnt/config || true
+        mount -t vfat -o umask=0077 "${BLOCKDEV}" /mnt/config || true
+    elif [[ "${TYPE}" == 'iso9660' ]]; then
+        mount -t iso9660 -o ro,mode=0700 "${BLOCKDEV}" /mnt/config || true
     else
         mount -o mode=0700 "${BLOCKDEV}" /mnt/config || true
     fi
