@@ -58,6 +58,8 @@ HAVE_SELINUX = os.path.exists(SELINUX_RESTORECON)
 def safe_open(*args, **kwargs):
     f = open(*args, **kwargs)
     yield f
+    f.flush()
+    os.fsync(f.fileno())
     f.close()
     path = os.path.abspath(f.name)
     if HAVE_SELINUX:

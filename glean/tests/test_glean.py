@@ -143,6 +143,7 @@ class TestGlean(base.BaseTestCase):
         return real_path_exists(path)
 
     @mock.patch('subprocess.call', return_value=0, new_callable=mock.Mock)
+    @mock.patch('os.fsync', return_value=0, new_callable=mock.Mock)
     @mock.patch('os.unlink', return_value=0, new_callable=mock.Mock)
     @mock.patch('os.symlink', return_value=0, new_callable=mock.Mock)
     @mock.patch('os.path.exists', new_callable=mock.Mock)
@@ -156,6 +157,7 @@ class TestGlean(base.BaseTestCase):
                                 mock_os_path_exists,
                                 mock_os_symlink,
                                 mock_os_unlink,
+                                mock_os_fsync,
                                 mock_call,
                                 skip_dns=False,
                                 use_nm=False):
