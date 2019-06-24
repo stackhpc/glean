@@ -1,0 +1,19 @@
+- project:
+    templates:
+      - openstack-python-jobs-no-constraints
+      - openstack-python35-jobs-no-constraints
+    check:
+      jobs:
+        - nodepool-functional-py35-gentoo-src:
+            voting: false
+        - nodepool-functional-py35-redhat-src
+        - nodepool-functional-py35-ubuntu-src
+        - nodepool-functional-py35-suse-src:
+            voting: false
+    gate:
+      jobs:
+        - nodepool-functional-py35-redhat-src
+        - nodepool-functional-py35-ubuntu-src
+    experimental:
+      jobs:
+        - nodepool-functional-py35-debian-src
