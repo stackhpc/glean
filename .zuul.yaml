@@ -4,16 +4,25 @@
       - openstack-python35-jobs-no-constraints
     check:
       jobs:
-        - nodepool-functional-py35-gentoo-src:
+        - dib-nodepool-functional-openstack-gentoo-src:
             voting: false
-        - nodepool-functional-py35-redhat-src
-        - nodepool-functional-py35-ubuntu-src
-        - nodepool-functional-py35-suse-src:
-            voting: false
+        - dib-nodepool-functional-openstack-centos-7-src
+        - dib-nodepool-functional-openstack-fedora-29-src
+        - dib-nodepool-functional-openstack-ubuntu-trusty-src
+        - dib-nodepool-functional-openstack-ubuntu-xenial-src
+        - dib-nodepool-functional-openstack-ubuntu-bionic-src
+        - dib-nodepool-functional-openstack-opensuse-150-src
+        - dib-nodepool-functional-openstack-opensuse-tumbleweed-src
     gate:
       jobs:
-        - nodepool-functional-py35-redhat-src
-        - nodepool-functional-py35-ubuntu-src
+        - dib-nodepool-functional-openstack-centos-7-src
+        - dib-nodepool-functional-openstack-fedora-29-src
+        - dib-nodepool-functional-openstack-ubuntu-trusty-src
+        - dib-nodepool-functional-openstack-ubuntu-xenial-src
+        - dib-nodepool-functional-openstack-ubuntu-bionic-src
+        - dib-nodepool-functional-openstack-opensuse-150-src
+        - dib-nodepool-functional-openstack-opensuse-tumbleweed-src
     experimental:
       jobs:
-        - nodepool-functional-py35-debian-src
+        - dib-nodepool-functional-openstack-debian-stretch-src
+        - dib-nodepool-functional-openstack-debian-buster-src
