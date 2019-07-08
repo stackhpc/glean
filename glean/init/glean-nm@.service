@@ -1,6 +1,7 @@
 [Unit]
 Description=Glean for interface %I with NetworkManager
-Wants=local-fs.target
+Before=network-pre.target
+Wants=network-pre.target
 After=local-fs.target
 
 # Red Hat
