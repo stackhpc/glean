@@ -376,7 +376,8 @@ def _write_networkd_interface(name, interfaces, args, files_struct=dict()):
             else:
                 files_struct[network_file]['[Network]'].append('DHCP=ipv6')
         # slaac can start dhcp6 if the associated RA option is sent to server
-        if interface['type'] == 'ipv6_slaac':
+        if (interface['type'] == 'ipv6_slaac' or
+                interface['type'] == 'ipv6_dhcpv6-stateless'):
             # we are accepting slaac now, remove the disabling of slaac
             if 'IPv6AcceptRA=no' in files_struct[network_file]['[Network]']:
                 files_struct[network_file]['[Network]'].remove(
