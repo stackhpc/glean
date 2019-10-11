@@ -1124,9 +1124,12 @@ def is_interface_live(interface, sys_root):
 
 
 def interface_live(iface, sys_root, args):
-    log.debug("Checking if interface %s has an active link carrier." % iface)
+    log.debug("Checking status of interface %s" % iface)
     if is_interface_live(iface, sys_root):
+        log.debug("%s has active carrier, including", iface)
         return True
+    else:
+        log.debug("%s does not have active carrier", iface)
 
     if args.noop:
         return False
@@ -1185,9 +1188,13 @@ def get_sys_interfaces(interface, args):
     ignored_interfaces = ('sit', 'tunl', 'bonding_master', 'teql', 'wg',
                           'ip6gre', 'ip6_vti', 'ip6tnl', 'bond', 'lo')
     sys_interfaces = {}
+
+    called_from_udev = False
     if interface is not None:
         log.debug("Only considering interface %s from arguments" % interface)
         interfaces = [interface]
+        # see notes below...
+        called_from_udev = True
     else:
         interfaces = [f for f in os.listdir(sys_root)
                       if not f.startswith(ignored_interfaces)]
@@ -1212,9 +1219,48 @@ def get_sys_interfaces(interface, args):
         # glean.
         if mac_addr_type != PERMANENT_ADDR_TYPE:
             continue
+
+        mac = open('%s/%s/address' % (sys_root, iface), 'r').read().strip()
+
+        # Hack alert!  If we have been given a single interface
+        # argument (hence called_from_udev is true), that means we
+        # have been called for just one nic by udev in response to the
+        # "net" "add" action matching.  We are going to assume that if
+        # we made it this far (i.e. past the filters above) this
+        # interface should be configured.
+        #
+        # It is unclear, as at 2019-10, if there are active jobs
+        # relying on the "probe" path below.  The only way to get into
+        # this path is being called from init scripts on a pre-systemd
+        # platform that does not use udev activiation; this would mean
+        # (as at this writing) Trusty (CentOS 6 being long gone).
+        #
+        # In short, it tries to bring up *all* the interfaces, and if
+        # they don't come up, it figures they're not valid and
+        # excludes them.  This introduces a very tricky race -- by
+        # bringing the interface up it can start accepting RA
+        # broadcasts and possibly have the kernel configure it with an
+        # ipv6 addresses.  Then, network-manager will see the
+        # interface is already configured, and out of an abdundance of
+        # caution, refuse to re-configure it.  You end up with broken
+        # networking.
+        #
+        # This is racy; you might get lucky and the RA timeout is long
+        # enough that network-manager starts before this happens.  So
+        # it is not exactly correct to say that the probe path is
+        # completely broken; it is possible users have just not
+        # noticed or are tacitly relying on it.
+        #
+        # While we consider this, assuming that if we are called from
+        # udev that the interface is to be configured here, and not
+        # bringing it "up", avoids this issue.
+        if called_from_udev:
+            log.debug("Interface matched: %s (%s)", iface, mac)
+            sys_interfaces[mac] = iface
+            return sys_interfaces
+
         # check if interface is up if not try and bring it up
         if interface_live(iface, sys_root, args):
-            mac = open('%s/%s/address' % (sys_root, iface), 'r').read().strip()
             if_dict[iface] = mac
 
     # wait up to 9 seconds all interfaces to reach up
@@ -1225,6 +1271,7 @@ def get_sys_interfaces(interface, args):
             mac = if_dict[iface]
             if iface in if_up_list:
                 continue
+            log.debug("Checking liveness of %s", mac)
             if is_interface_live(iface, sys_root):
                 # Add system interface
                 sys_interfaces[mac] = iface
@@ -1245,6 +1292,9 @@ def get_sys_interfaces(interface, args):
                                                          if_dict[iface])
             log.warn(msg)
 
+    log.debug("WARNING: interfaces have been brought 'up' during the probing"
+              "process.  This may cause problems if IPv6 RA have"
+              "been accepted")
     return sys_interfaces
 
 
