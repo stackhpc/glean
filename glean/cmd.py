@@ -76,8 +76,8 @@ def _exists_rh_interface(name, distro):
 
 def _is_suse(distro):
     # 'distro could be any of suse, opensuse,
-    # opensuse-leap, opensuse-tumbleweed
-    return 'suse' in distro
+    # opensuse-leap, opensuse-tumbleweed, sles
+    return 'suse' in distro or 'sles' in distro
 
 
 def _network_files(distro):
