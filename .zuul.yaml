@@ -12,8 +12,6 @@
         - dib-nodepool-functional-openstack-ubuntu-xenial-src
         - dib-nodepool-functional-openstack-ubuntu-bionic
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
-        - dib-nodepool-functional-openstack-opensuse-15-src
-        - dib-nodepool-functional-openstack-opensuse-tumbleweed-src
     gate:
       jobs:
         - dib-nodepool-functional-openstack-centos-7-src
@@ -22,9 +20,9 @@
         - dib-nodepool-functional-openstack-ubuntu-xenial-src
         - dib-nodepool-functional-openstack-ubuntu-bionic
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
-        - dib-nodepool-functional-openstack-opensuse-15-src
-        - dib-nodepool-functional-openstack-opensuse-tumbleweed-src
     experimental:
       jobs:
         - dib-nodepool-functional-openstack-debian-stretch-src
         - dib-nodepool-functional-openstack-debian-buster-src
+        - dib-nodepool-functional-openstack-opensuse-15-src
+        - dib-nodepool-functional-openstack-opensuse-tumbleweed-src
