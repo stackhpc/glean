@@ -319,7 +319,7 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
             continue
         inter_macs = [intf['mac_address'] for intf in interfaces.values()]
         link_macs = [intf.get('link_mac') for intf in interfaces.values()
-                     if 'vlan_id' in interface]
+                     if 'vlan_id' in intf]
         if mac in inter_macs or mac in link_macs:
             # We have a config drive config, move on
             log.debug("%s configured via config-drive" % mac)
@@ -934,7 +934,7 @@ def write_debian_interfaces(interfaces, sys_interfaces):
             continue
         inter_macs = [intf['mac_address'] for intf in interfaces.values()]
         link_macs = [intf.get('link_mac') for intf in interfaces.values()
-                     if 'vlan_id' in interface]
+                     if 'vlan_id' in intf]
         if mac in inter_macs or mac in link_macs:
             # We have a config drive config, move on
             continue
@@ -1003,6 +1003,11 @@ def get_config_drive_interfaces(net):
             for phy in vlan_link['bond_links']:
                 link['raw_macs'].append(
                     phys[phy]['ethernet_mac_address'].lower())
+        else:
+            log.warning('vlan_link=%s not matching any '
+                        'NIC', link['vlan_link'])
+            continue
+
         link['mac_address'] = link.pop(
             'vlan_mac_address', vlan_link['ethernet_mac_address']).lower()
 
@@ -1104,7 +1109,7 @@ def finish_files(files_to_write, args):
                     os.unlink(k)
                     retries = 1
                     continue
-                elif e.errno == errno.EACCESS:
+                elif e.errno == errno.EACCES:
                     log.debug(" ... is read only, skipped")
                     break
                 else:
@@ -1290,7 +1295,7 @@ def get_sys_interfaces(interface, args):
                 continue
             msg = "Skipping system interface %s (%s)" % (iface,
                                                          if_dict[iface])
-            log.warn(msg)
+            log.warning(msg)
 
     log.debug("WARNING: interfaces have been brought 'up' during the probing"
               "process.  This may cause problems if IPv6 RA have"
