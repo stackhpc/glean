@@ -1,6 +1,7 @@
-### Write /etc/resolv.conf
-nameserver 69.20.0.196
-nameserver 69.20.0.164
+### Write /etc/systemd/resolved.conf
+[Resolve]
+DNS = 69.20.0.196 69.20.0.164
+
 ### Write /etc/systemd/network/eth0.network
 # Automatically generated, do not edit
 [Match]

@@ -1,6 +1,7 @@
-### Write /etc/resolv.conf
-nameserver 72.3.128.241
-nameserver 72.3.128.240
+### Write /etc/systemd/resolved.conf
+[Resolve]
+DNS = 72.3.128.241 72.3.128.240
+
 ### Write /etc/systemd/network/eth0.network
 # Automatically generated, do not edit
 [Match]

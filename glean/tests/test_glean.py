@@ -142,6 +142,13 @@ class TestGlean(base.BaseTestCase):
             return False
         return real_path_exists(path)
 
+    def os_system_side_effect(self, distro, command):
+        if distro.lower() != 'networkd' and \
+                command == 'systemctl is-enabled systemd-resolved':
+            return 3
+        else:
+            return 0
+
     @mock.patch('subprocess.call', return_value=0, new_callable=mock.Mock)
     @mock.patch('os.fsync', return_value=0, new_callable=mock.Mock)
     @mock.patch('os.unlink', return_value=0, new_callable=mock.Mock)
@@ -183,6 +190,10 @@ class TestGlean(base.BaseTestCase):
             self.os_listdir_side_effect, provider)
         mock_open.side_effect = functools.partial(
             self.open_side_effect, provider)
+        # we want os.system to return False for specific commands if
+        # running networkd
+        mock_os_system.side_effect = functools.partial(
+            self.os_system_side_effect, distro)
 
         # default args
         argv = ['--hostname']
@@ -234,6 +245,9 @@ class TestGlean(base.BaseTestCase):
             if skip_dns and '/etc/resolv.conf' in dest:
                 self.assertNotIn(dest, self.file_handle_mocks)
                 continue
+            if skip_dns and '/etc/systemd/resolved.conf' in dest:
+                self.assertNotIn(dest, self.file_handle_mocks)
+                continue
             self.assertIn(dest, self.file_handle_mocks)
             write_handle = self.file_handle_mocks[dest].write
             write_handle.assert_called_once_with(content)
@@ -278,6 +292,10 @@ class TestGlean(base.BaseTestCase):
         with mock.patch('glean.systemlock.Lock'):
             self._assert_distro_provider(self.distro, self.style,
                                          'eth0', skip_dns=True)
+
+    def test_glean_systemd_resolved(self):
+        with mock.patch('glean.systemlock.Lock'):
+            self._assert_distro_provider(self.distro, self.style, 'eth0')
 
     def test_glean_skip_dns(self):
         with mock.patch('glean.systemlock.Lock'):

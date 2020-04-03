@@ -945,15 +945,26 @@ def write_debian_interfaces(interfaces, sys_interfaces):
 
 
 def write_dns_info(dns_servers):
+    # will fail on non-systemd systems (what we want)
+    # will exit 1 if not enabled (what we want)
+    # will exit 0 if enabled (or indirectly enabled)
+    resolved_enabled = os.system('systemctl is-enabled systemd-resolved')
     resolve_confs = {}
-    resolv_nameservers = ""
-    for server in dns_servers:
-        resolv_nameservers += "nameserver {0}\n".format(server)
-    resolve_confs['/etc/resolv.conf'] = resolv_nameservers
-    # set up resolved if available
-    if os.path.isfile('/etc/systemd/resolved.conf'):
+    # write resolv.conf if the file can be written to (if symlink is pointing
+    # to a non-existant file, writing will fail), will return false if the
+    # pointer is incomplete
+    if resolved_enabled != 0:
+        log.debug("resolved not in use, writing to /etc/resolv.conf")
+        resolv_nameservers = ""
+        for server in dns_servers:
+            resolv_nameservers += "nameserver {0}\n".format(server)
+        resolve_confs['/etc/resolv.conf'] = resolv_nameservers
+    # set up resolved if enabled
+    if resolved_enabled == 0:
+        log.debug("resolved in use, writing to /etc/systemd/resolved.conf")
         # read the existing config  so we only overwrite what's needed
         resolved_conf = configparser.ConfigParser()
+        resolved_conf.optionxform = str
         resolved_conf.read('/etc/systemd/resolved.conf')
         # create config section if not created
         if not resolved_conf.has_section('Resolve'):
