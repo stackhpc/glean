@@ -4,6 +4,8 @@
       - openstack-python35-jobs-no-constraints
     check:
       jobs:
+        - opendev-buildset-registry
+        - nodepool-build-image-siblings
         - dib-nodepool-functional-openstack-gentoo-src:
             voting: false
         - dib-nodepool-functional-openstack-centos-7-src
@@ -13,6 +15,8 @@
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
     gate:
       jobs:
+        - opendev-buildset-registry
+        - nodepool-build-image-siblings
         - dib-nodepool-functional-openstack-centos-7-src
         - dib-nodepool-functional-openstack-centos-8-src
         - dib-nodepool-functional-openstack-fedora-31-src
@@ -20,6 +24,8 @@
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
     experimental:
       jobs:
+        - opendev-buildset-registry
+        - nodepool-build-image-siblings
         - dib-nodepool-functional-openstack-debian-stretch-src
         - dib-nodepool-functional-openstack-debian-buster-src
         - dib-nodepool-functional-openstack-opensuse-15-src
