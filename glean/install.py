@@ -87,6 +87,7 @@ def main():
                         action="store_true")
 
     args = parser.parse_args()
+    p = _find_gleansh_path()
 
     if args.quiet:
         logging.basicConfig(level=logging.ERROR)
@@ -96,7 +97,8 @@ def main():
     # needs to go first because gentoo can have systemd along side openrc
     if os.path.exists('/etc/gentoo-release'):
         log.info('installing openrc services')
-        install('glean.openrc', '/etc/init.d/glean')
+        install('glean.openrc', '/etc/init.d/glean',
+                replacements={'GLEANSH_PATH': p})
     # Needs to check for the presence of systemd and systemctl
     # as apparently some packages may stage systemd init files
     # when systemd is not present.
@@ -107,7 +109,6 @@ def main():
     if (os.path.exists('/usr/lib/systemd/system') and
             (os.path.exists('/usr/bin/systemctl') or
              os.path.exists('/bin/systemctl'))):
-        p = _find_gleansh_path()
 
         log.info("Installing systemd services")
         log.info("glean.sh in %s" % p)
