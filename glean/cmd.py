@@ -202,7 +202,7 @@ def _write_rh_interface(name, interface, args):
     # the return value, not append it
     results = _set_rh_bonding(name, interface, distro, results)
     routes = []
-    for route in interface['routes']:
+    for route in interface.get('routes', ()):
         if route['network'] == '0.0.0.0' and route['netmask'] == '0.0.0.0':
             if not _is_suse(distro):
                 results += "DEFROUTE=yes\n"
@@ -657,7 +657,7 @@ mac_{name}="{hwaddr}\"\n""".format(
                 hwaddr=interface['mac_address']
             )
             routes = list()
-            for route in interface['routes']:
+            for route in interface.get('routes', ()):
                 if (route['network'] == '0.0.0.0' and
                         route['netmask'] == '0.0.0.0'):
                     # add default route if it exists
@@ -890,7 +890,7 @@ def write_debian_interfaces(interfaces, sys_interfaces):
                 result += "    netmask {0}\n".format(
                     utils.ipv6_netmask_length(interface['netmask']))
 
-            for route in interface['routes']:
+            for route in interface.get('routes', ()):
                 if ((route['network'] == '0.0.0.0' and
                         route['netmask'] == '0.0.0.0') or
                     (route['network'] == '::' and
