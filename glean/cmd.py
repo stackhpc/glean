@@ -22,7 +22,6 @@ import errno
 import json
 import logging
 import os
-import re
 import subprocess
 import sys
 import time
@@ -1419,7 +1418,7 @@ def write_ssh_keys(args):
         if key_title not in keys_to_write:
             keys_to_write.append(key_title)
 
-        if key not in keys_to_write:
+        if key.rstrip() not in keys_to_write:
             keys_to_write.append(key)
 
     files_to_write = {
@@ -1492,14 +1491,14 @@ def set_hostname_from_config_drive(args):
         for host in hosts_to_add:
             host_value = hosts_to_add[host]
             # See if we already have a hosts entry for hostname
-            prog = re.compile('^%s .*%s\n' % (host_value, host))
-            match = None
             if os.path.isfile('/etc/hosts'):
-                with open('/etc/hosts') as fh:
-                    match = prog.match(fh.read())
-
-            # Write out a hosts entry for hostname
-            if match is None:
+                with safe_open('/etc/hosts', 'r+') as fh:
+                    for line in fh:
+                        if line.startswith('%s %s' % (host_value, host)):
+                            break
+                    else:
+                        fh.write(u'%s %s\n' % (host_value, host))
+            else:
                 with safe_open('/etc/hosts', 'a+') as fh:
                     fh.write(u'%s %s\n' % (host_value, host))
 

@@ -92,7 +92,7 @@ class TestGlean(base.BaseTestCase):
                 # note; don't use spec=file here ... it's not py3
                 # compatible.  It really just limits the allowed
                 # mocked functions.
-                mock_handle = mock.Mock()
+                mock_handle = mock.MagicMock()
                 mock_handle.__enter__ = mock.Mock()
                 mock_handle.__exit__ = mock.Mock()
                 mock_handle.name = path
