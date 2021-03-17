@@ -29,8 +29,12 @@ elif blkid -t LABEL="CONFIG-2" ; then
     CONFIG_DRIVE_LABEL="CONFIG-2"
 fi
 
-# Test to see if config-drive exists. If not, skip and assume DHCP networking
-# will work because sanity
+# If the config drive exists we update the ssh keys, hostname and network
+# interfaces. Otherwise we only update network interfaces with a dhcp
+# fallback.
+#
+# Note we want to run as few glean processes as possible to cut down on
+# runtime in resource constrained environments.
 if [ -n "$CONFIG_DRIVE_LABEL" ]; then
     # Mount config drive
     mkdir -p /mnt/config
@@ -43,7 +47,7 @@ if [ -n "$CONFIG_DRIVE_LABEL" ]; then
     else
         mount -o mode=0700 "${BLOCKDEV}" /mnt/config || true
     fi
-    glean --ssh --skip-network --hostname
+    glean --ssh --hostname $@
+else
+    glean $@
 fi
-
-glean $@
