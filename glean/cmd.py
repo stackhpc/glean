@@ -1350,7 +1350,7 @@ def get_network_info(args):
     return network_info
 
 
-def write_network_info_from_config_drive(args):
+def write_network_info_from_config_drive(args, meta_data):
     """Write network info from config-drive.
 
     If there is no meta_data.json in config-drive, it means that there
@@ -1363,13 +1363,6 @@ def write_network_info_from_config_drive(args):
     Returns False on any issue, which will cause the writing of
     DHCP network files.
     """
-
-    config_drive = os.path.join(args.root, 'mnt/config')
-    meta_data_path = '%s/openstack/latest/meta_data.json' % config_drive
-    meta_data = {}
-    if os.path.exists(meta_data_path):
-        meta_data = json.load(open(meta_data_path))
-
     network_info = get_network_info(args)
 
     dns = {}
@@ -1388,20 +1381,15 @@ def write_network_info_from_config_drive(args):
     write_static_network_info(interfaces, sys_interfaces, dns, args)
 
 
-def write_ssh_keys(args):
+def write_ssh_keys(args, meta_data):
     """Write ssh-keys from config-drive.
 
-    If there is no meta_data.json in config-drive, it means that there
-    is no config drive mounted- which means we do nothing.
+    If there is no 'public_keys' key in meta_data.json in
+    config-drive, it means that there is no config drive mounted-
+    which means we do nothing.
+
     """
-
-    config_drive = os.path.join(args.root, 'mnt/config')
     ssh_path = os.path.join(args.root, 'root/.ssh')
-    meta_data_path = '%s/openstack/latest/meta_data.json' % config_drive
-    if not os.path.exists(meta_data_path):
-        return 0
-
-    meta_data = json.load(open(meta_data_path))
     if 'public_keys' not in meta_data:
         return 0
 
@@ -1432,16 +1420,10 @@ def write_ssh_keys(args):
     finish_files(files_to_write, args)
 
 
-def set_hostname_from_config_drive(args):
+def set_hostname_from_config_drive(args, meta_data):
     if args.noop:
         return
 
-    config_drive = os.path.join(args.root, 'mnt/config')
-    meta_data_path = '%s/openstack/latest/meta_data.json' % config_drive
-    if not os.path.exists(meta_data_path):
-        return
-
-    meta_data = json.load(open(meta_data_path))
     if 'name' not in meta_data:
         return
 
@@ -1553,12 +1535,21 @@ def main(argv=None):
               "with" if args.use_nm else "without")
 
     with systemlock.Lock('/tmp/glean.lock'):
+        config_drive = os.path.join(args.root, 'mnt/config')
+        meta_data_path = '%s/openstack/latest/meta_data.json' % config_drive
+        if not os.path.exists(meta_data_path):
+            log.debug("No meta_data.json found")
+            meta_data = {}
+        else:
+            meta_data = json.load(open(meta_data_path))
+            log.debug("metadata loaded from: %s" % meta_data_path)
+
         if args.ssh:
-            write_ssh_keys(args)
+            write_ssh_keys(args, meta_data)
         if args.hostname:
-            set_hostname_from_config_drive(args)
+            set_hostname_from_config_drive(args, meta_data)
         if args.interface != 'lo' and not args.skip:
-            write_network_info_from_config_drive(args)
+            write_network_info_from_config_drive(args, meta_data)
     log.debug("Done!")
     return 0
 
