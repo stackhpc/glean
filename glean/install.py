@@ -142,6 +142,23 @@ def main():
             install('nm-no-resolv-handling.conf',
                     '/etc/NetworkManager/conf.d/nm-no-resolv-handling.conf',
                     mode='0644')
+
+            # NetworkManager has a "after" network-pre, and
+            # glean@<interface> services have a "before".  However, if
+            # udev has not yet triggered and started the glean
+            # service, which it seems can be quite common in a slow
+            # environment like a binary-translated nested-vm, systemd
+            # may think it is fine to start NetworkManager because
+            # network-pre has been reached with no blockers.  Thus we
+            # override NetworkManager to wait for udev-settle, which
+            # should ensure the glean service has started; which will
+            # block network-pre until it finishes writing out the
+            # configs.
+            install(
+                'nm-udev-settle.override',
+                '/etc/systemd/system/NetworkManager.service.d/override.conf',
+                mode='0644')
+
     elif os.path.exists('/etc/init'):
         log.info("Installing upstart services")
         install('glean.conf', '/etc/init/glean.conf')
