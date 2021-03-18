@@ -13,7 +13,7 @@ ConditionPathExists=!/etc/sysconfig/network/ifcfg-%I
 Type=oneshot
 User=root
 Environment="ARGS=--interface %I"
-ExecStart=%%GLEANSH_PATH%%/glean.sh --use-nm --debug $ARGS
+ExecStart=%%GLEANSH_PATH%%/glean.sh --use-nm --debug $ARGS %%EXTRA_ARGS%%
 RemainAfterExit=true
 
 StandardOutput=journal+console
