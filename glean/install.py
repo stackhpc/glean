@@ -119,9 +119,9 @@ def main():
     # may be wrong as install is generally executed in a chroot
     # with diskimage-builder.
 
-    if (os.path.exists('/usr/lib/systemd/system') and
-            (os.path.exists('/usr/bin/systemctl') or
-             os.path.exists('/bin/systemctl'))):
+    if (os.path.exists('/usr/lib/systemd/system')
+            and (os.path.exists('/usr/bin/systemctl')
+                 or os.path.exists('/bin/systemctl'))):
 
         log.info("Installing systemd services")
         log.info("glean.sh in %s" % p)
@@ -179,6 +179,7 @@ def main():
         install('glean.init', '/etc/init.d/glean',
                 replacements={'EXTRA_ARGS': extra_args})
         os.system('update-rc.d glean defaults')
+
 
 if __name__ == '__main__':
     main()

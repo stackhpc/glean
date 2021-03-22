@@ -26,10 +26,10 @@ import subprocess
 import sys
 import time
 
+from glean._vendor import distro
 from glean import install
 from glean import systemlock
 from glean import utils
-from glean._vendor import distro
 
 try:
     import configparser
@@ -357,9 +357,10 @@ def _write_networkd_interface(name, interfaces, args, files_struct=dict()):
         )
         # define network if needed (basically always)
         if ((interface['type'] in ['ipv4_dhcp', 'ipv6_slaac',
-            'ipv6_dhcpv6_stateful', 'manual', 'ipv4', 'ipv6']) or
-                ('vlan_id' in interface) or
-                ('bond_mode' in interface)):
+                                   'ipv6_dhcpv6_stateful', 'manual',
+                                   'ipv4', 'ipv6'])
+                or ('vlan_id' in interface)
+                or ('bond_mode' in interface)):
             if '[Network]' not in files_struct[network_file]:
                 files_struct[network_file]['[Network]'] = list()
             if 'services' in interface:
@@ -383,8 +384,8 @@ def _write_networkd_interface(name, interfaces, args, files_struct=dict()):
             else:
                 files_struct[network_file]['[Network]'].append('DHCP=ipv6')
         # slaac can start dhcp6 if the associated RA option is sent to server
-        if (interface['type'] == 'ipv6_slaac' or
-                interface['type'] == 'ipv6_dhcpv6-stateless'):
+        if (interface['type'] == 'ipv6_slaac'
+                or interface['type'] == 'ipv6_dhcpv6-stateless'):
             # we are accepting slaac now, remove the disabling of slaac
             if 'IPv6AcceptRA=no' in files_struct[network_file]['[Network]']:
                 files_struct[network_file]['[Network]'].remove(
@@ -666,11 +667,10 @@ mac_{name}="{hwaddr}\"\n""".format(
             )
             routes = list()
             for route in interface.get('routes', ()):
-                if (route['network'] == '0.0.0.0' and
-                        route['netmask'] == '0.0.0.0'):
+                if (route['network'] == '0.0.0.0'
+                        and route['netmask'] == '0.0.0.0'):
                     # add default route if it exists
                     routes.append('default via {gw}'.format(
-                        name=name,
                         gw=route['gateway']
                     ))
                 else:
@@ -903,10 +903,10 @@ def write_debian_interfaces(interfaces, sys_interfaces, args):
                     utils.ipv6_netmask_length(interface['netmask']))
 
             for route in interface.get('routes', ()):
-                if ((route['network'] == '0.0.0.0' and
-                        route['netmask'] == '0.0.0.0') or
-                    (route['network'] == '::' and
-                        route['netmask'] == '::')):
+                if ((route['network'] == '0.0.0.0'
+                     and route['netmask'] == '0.0.0.0')
+                    or (route['network'] == '::'
+                        and route['netmask'] == '::')):
                     result += "    gateway {0}\n".format(route['gateway'])
                 else:
                     if interface['type'] == 'ipv4':

@@ -224,8 +224,7 @@ class TestGlean(base.BaseTestCase):
         with open(output_path) as f:
             for line in f:
                 if line == '%NM_CONTROLLED%\n':
-                        line = 'NM_CONTROLLED=%s\n' % \
-                            ("yes" if use_nm else "no")
+                    line = 'NM_CONTROLLED=%s\n' % ("yes" if use_nm else "no")
                 lines.append(line)
         write_dest = None
         write_content = None

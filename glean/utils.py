@@ -26,16 +26,17 @@ def ipv6_netmask_length(netmask):
             if not w or int(w, 16) == 0:
                 break
             count += bitCount.index(int(w, 16))
-    except:
+    except Exception:
         raise SyntaxError('Bad Netmask')
     return count
 
 
-# code to convert netmask ip to cidr number
-# https://stackoverflow.com/a/43885814
 def ipv4_netmask_length(netmask):
-    '''
+    """Convert netmask IP to CIDR number.
+
+    From https://stackoverflow.com/a/43885814
+
     :param netmask: netmask ip addr (eg: 255.255.255.0)
     :return: equivalent cidr number to given netmask ip (eg: 24)
-    '''
+    """
     return sum([bin(int(x)).count('1') for x in netmask.split('.')])
