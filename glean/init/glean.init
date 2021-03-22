@@ -12,7 +12,7 @@
 
 NAME=glean
 INIT_NAME=/etc/init.d/${NAME}
-SCRIPT_NAME=/usr/local/bin/${NAME}.sh
+SCRIPT_NAME=%%GLEANSH_PATH%%/${NAME}.sh
 
 [ -x $SCRIPT_NAME ] || exit 0
 

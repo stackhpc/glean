@@ -16,6 +16,7 @@
 import argparse
 import logging
 import os
+import pkg_resources
 import subprocess
 import sys
 
@@ -23,15 +24,13 @@ log = logging.getLogger("glean-install")
 
 
 def _find_gleansh_path():
-    # the "glean.sh" file is installed in /usr/bin/ on Fedora, and
-    # /usr/local/bin on Ubuntu/Debian thanks to differences in pip and
-    # where it likes to put scripts.
-    if os.path.exists("/usr/local/bin/glean.sh"):
-        return "/usr/local/bin"
-    if os.path.exists("/usr/bin/glean.sh"):
-        return "/usr/bin"
-    log.error("Unable to find glean.sh!")
-    sys.exit(1)
+    # glean.sh is a script installed by setup.cfg as a sibling to this
+    # script
+    p = pkg_resources.resource_filename(__name__, "init")
+    if not os.path.exists(os.path.join(p, "glean.sh")):
+        log.error("Unable to find glean.sh!")
+        sys.exit(1)
+    return p
 
 
 def install(source_file, target_file, mode='0755', replacements=dict()):
@@ -106,6 +105,13 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO)
 
+    # Write the path of the currently executing interpreter into a
+    # file alongside glean.sh.  This means glean.sh can call the
+    # sibling python-glean and know that it's using the glean we
+    # installed, even in a virtualenv etc.
+    install('python-glean.template', os.path.join(p, 'python-glean'),
+            mode='0755', replacements={'INTERP': sys.executable})
+
     # needs to go first because gentoo can have systemd along side openrc
     if os.path.exists('/etc/gentoo-release'):
         log.info('installing openrc services')
@@ -171,13 +177,19 @@ def main():
     elif os.path.exists('/etc/init'):
         log.info("Installing upstart services")
         install('glean.conf', '/etc/init/glean.conf',
-                replacements={'EXTRA_ARGS': extra_args})
+                replacements={
+                    'GLEANSH_PATH': p,
+                    'EXTRA_ARGS': extra_args
+                })
     elif os.path.exists('/sbin/rc-update'):
         subprocess.call(['rc-update', 'add', 'glean', 'boot'])
     else:
         log.info("Installing sysv services")
         install('glean.init', '/etc/init.d/glean',
-                replacements={'EXTRA_ARGS': extra_args})
+                replacements={
+                    'GLEANSH_PATH': p,
+                    'EXTRA_ARGS': extra_args
+                })
         os.system('update-rc.d glean defaults')
 
 

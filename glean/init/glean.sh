@@ -19,6 +19,10 @@ set -o pipefail
 
 PATH=/usr/local/bin:/bin:/sbin:/usr/bin:/usr/sbin
 
+# python-glean is installed alongside us and runs glean (the python
+# tool that actually does stuff).
+_GLEAN_PATH=$(dirname "$0")
+
 # NOTE(mnaser): Depending on the cloud, it may have `vfat` config drive which
 #               comes with a capitalized label rather than all lowercase.
 CONFIG_DRIVE_LABEL=""
@@ -47,7 +51,7 @@ if [ -n "$CONFIG_DRIVE_LABEL" ]; then
     else
         mount -o mode=0700 "${BLOCKDEV}" /mnt/config || true
     fi
-    glean --ssh --hostname $@
+    $_GLEAN_PATH/python-glean --ssh --hostname $@
 else
-    glean $@
+    $_GLEAN_PATH/python-glean $@
 fi
