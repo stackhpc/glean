@@ -1,12 +1,14 @@
 [Unit]
 Description=Glean system configuration
 Before=systemd-networkd.service
+After=glean-early.service
 Requires=systemd-networkd.service
+Wants=glean-early.service
 
 [Service]
 Type=oneshot
 User=root
-ExecStart=%%GLEANSH_PATH%%/glean.sh --distro networkd %%EXTRA_ARGS%%
+ExecStart=%%GLEANSH_PATH%%/python-glean --distro networkd %%EXTRA_ARGS%%
 RemainAfterExit=true
 
 [Install]

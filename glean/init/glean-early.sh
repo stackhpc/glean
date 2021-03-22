@@ -19,8 +19,12 @@ set -o pipefail
 
 PATH=/usr/local/bin:/bin:/sbin:/usr/bin:/usr/sbin
 
+# Try and mount the config-drive; if it exists, then update ssh keys
+# and hostname.  udev events will fire and run glean for each of the
+# available network interfaces.
+
 # python-glean is installed alongside us and runs glean (the python
-# tool that actually does stuff).
+# tool that acutally does stuff).
 _GLEAN_PATH=$(dirname "$0")
 
 # NOTE(mnaser): Depending on the cloud, it may have `vfat` config drive which
@@ -33,12 +37,6 @@ elif blkid -t LABEL="CONFIG-2" ; then
     CONFIG_DRIVE_LABEL="CONFIG-2"
 fi
 
-# If the config drive exists we update the ssh keys, hostname and network
-# interfaces. Otherwise we only update network interfaces with a dhcp
-# fallback.
-#
-# Note we want to run as few glean processes as possible to cut down on
-# runtime in resource constrained environments.
 if [ -n "$CONFIG_DRIVE_LABEL" ]; then
     # Mount config drive
     mkdir -p /mnt/config
@@ -51,7 +49,6 @@ if [ -n "$CONFIG_DRIVE_LABEL" ]; then
     else
         mount -o mode=0700 "${BLOCKDEV}" /mnt/config || true
     fi
-    $_GLEAN_PATH/python-glean --ssh --hostname $@
-else
-    $_GLEAN_PATH/python-glean $@
+    # Note networking is skipped here; udev rules will configure
+    exec $_GLEAN_PATH/python-glean --skip-network --ssh --hostname $@
 fi

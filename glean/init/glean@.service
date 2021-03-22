@@ -2,7 +2,8 @@
 Description=Glean for interface %I
 DefaultDependencies=no
 Before=network-pre.target
-Wants=network-pre.target
+After = glean-early.service
+Wants=network-pre.target glean-early.service
 
 # Red Hat
 ConditionPathExists=!/etc/sysconfig/network-scripts/ifcfg-%I
@@ -15,7 +16,7 @@ ConditionPathExists=!/etc/network/interfaces.d/%I.cfg
 Type=oneshot
 User=root
 Environment="ARGS=--interface %I"
-ExecStartPre=%%GLEANSH_PATH%%/glean.sh ${ARGS} %%EXTRA_ARGS%%
+ExecStartPre=%%GLEANSH_PATH%%/python-glean %%EXTRA_ARGS%% ${ARGS}
 ExecStart=/sbin/ifup %I
 RemainAfterExit=true
 

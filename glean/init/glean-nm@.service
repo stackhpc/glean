@@ -1,8 +1,8 @@
 [Unit]
 Description=Glean for interface %I with NetworkManager
 Before=network-pre.target
-Wants=network-pre.target
-After=local-fs.target
+Wants=network-pre.target glean-early.service
+After=local-fs.target glean-early.service
 
 # Red Hat
 ConditionPathExists=!/etc/sysconfig/network-scripts/ifcfg-%I
@@ -13,7 +13,7 @@ ConditionPathExists=!/etc/sysconfig/network/ifcfg-%I
 Type=oneshot
 User=root
 Environment="ARGS=--interface %I"
-ExecStart=%%GLEANSH_PATH%%/glean.sh --use-nm --debug $ARGS %%EXTRA_ARGS%%
+ExecStart=%%GLEANSH_PATH%%/python-glean --use-nm --debug %%EXTRA_ARGS%% $ARGS
 RemainAfterExit=true
 
 StandardOutput=journal+console

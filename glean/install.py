@@ -27,9 +27,6 @@ def _find_gleansh_path():
     # glean.sh is a script installed by setup.cfg as a sibling to this
     # script
     p = pkg_resources.resource_filename(__name__, "init")
-    if not os.path.exists(os.path.join(p, "glean.sh")):
-        log.error("Unable to find glean.sh!")
-        sys.exit(1)
     return p
 
 
@@ -132,6 +129,13 @@ def main():
         log.info("Installing systemd services")
         log.info("glean.sh in %s" % p)
 
+        log.info("Install early service")
+        install(
+            'glean-early.service',
+            '/usr/lib/systemd/system/glean-early.service',
+            mode='0644',
+            replacements={'GLEANSH_PATH': p})
+        subprocess.call(['systemctl', 'enable', 'glean-early.service'])
         if os.path.exists('/etc/gentoo-release'):
             install(
                 'glean-networkd.service',
