@@ -5,7 +5,7 @@
 description="basic instance setup"
 
 start() {
-  %%GLEANSH_PATH%%/glean-legacy.sh
+  %%GLEAN_SCRIPTS_DIR%%/glean-legacy.sh
   eend 0
 }
 

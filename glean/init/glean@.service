@@ -16,7 +16,7 @@ ConditionPathExists=!/etc/network/interfaces.d/%I.cfg
 Type=oneshot
 User=root
 Environment="ARGS=--interface %I"
-ExecStartPre=%%GLEANSH_PATH%%/python-glean %%EXTRA_ARGS%% ${ARGS}
+ExecStartPre=%%GLEAN_SCRIPTS_DIR%%/python-glean %%EXTRA_ARGS%% ${ARGS}
 ExecStart=/sbin/ifup %I
 RemainAfterExit=true
 

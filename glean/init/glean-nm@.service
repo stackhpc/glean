@@ -13,7 +13,7 @@ ConditionPathExists=!/etc/sysconfig/network/ifcfg-%I
 Type=oneshot
 User=root
 Environment="ARGS=--interface %I"
-ExecStart=%%GLEANSH_PATH%%/python-glean --use-nm --debug %%EXTRA_ARGS%% $ARGS
+ExecStart=%%GLEAN_SCRIPTS_DIR%%/python-glean --use-nm --debug %%EXTRA_ARGS%% $ARGS
 RemainAfterExit=true
 
 StandardOutput=journal+console

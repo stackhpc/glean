@@ -7,7 +7,7 @@ After=local-fs.target
 [Service]
 Type=oneshot
 User=root
-ExecStart=%%GLEANSH_PATH%%/glean-early.sh --debug
+ExecStart=%%GLEAN_SCRIPTS_DIR%%/glean-early.sh --debug
 RemainAfterExit=true
 
 StandardOutput=journal+console
