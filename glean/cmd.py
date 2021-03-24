@@ -1344,8 +1344,8 @@ def get_network_info(args):
         log.debug("Did not find vendor_data or network_info in config-drive")
 
     if not network_info:
-        log.debug("Found no network_info in config-drive!  "
-                  "Asusming DHCP interfaces")
+        log.debug("Found no network_info in config-drive! "
+                  "Assuming DHCP interfaces")
 
     return network_info
 
