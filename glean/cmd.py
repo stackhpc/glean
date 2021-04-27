@@ -69,8 +69,7 @@ def safe_open(*args, **kwargs):
 
 def _exists_rh_interface(name, distro):
     file_to_check = _network_files(distro)['ifcfg'] + '-{name}'.format(
-        name=name
-        )
+        name=name)
     return os.path.exists(file_to_check)
 
 
