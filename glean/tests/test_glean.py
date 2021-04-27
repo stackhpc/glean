@@ -267,9 +267,9 @@ class TestGlean(base.BaseTestCase):
             hostname = meta_data['name']
 
         mock_call.assert_has_calls([mock.call(['hostname', hostname])])
-        if distro.lower() is 'gentoo':
+        if distro.lower() == 'gentoo':
             (self.file_handle_mocks['/etc/conf.d/hostname'].write.
-                assert_has_calls([mock.call(hostname)]))
+                assert_has_calls([mock.call('hostname="%s"\n' % hostname)]))
         else:
             self.file_handle_mocks['/etc/hostname'].write.assert_has_calls(
                 [mock.call(hostname), mock.call('\n')])

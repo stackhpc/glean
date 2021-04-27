@@ -1466,7 +1466,7 @@ def set_hostname_from_config_drive(args, meta_data):
         raise RuntimeError('Error setting hostname')
     else:
         # gentoo's hostname file is in a different location
-        if args.distro is 'gentoo':
+        if args.distro == 'gentoo':
             with open('/etc/conf.d/hostname', 'w') as fh:
                 fh.write("hostname=\"{host}\"\n".format(host=hostname))
         else:
