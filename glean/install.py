@@ -85,9 +85,21 @@ def main():
                         action="store_true")
     parser.add_argument("-q", "--quiet", help="Be very quiet",
                         action="store_true")
+    # NOTE(dtantsur): there may be two reasons to disable the fallback:
+    # 1) Remote edge deployments where DHCP (if present at all) is likely
+    # incorrect and should not be used.
+    # 2) Co-existing with another tool that handles DHCP differently (IPv6,
+    # SLAAC) or does a more sophisticated configuration (like NetworkManager
+    # or, in case of ironic-python-agent, dhcp-all-interfaces, which is **not**
+    # recommended, but is done nonetheless, mostly for legacy reasons).
+    parser.add_argument("--no-dhcp-fallback", action="store_true",
+                        help="Do not fall back to DHCP. If this is on, "
+                             "something else must configure networking or "
+                             "it will be left unconfigured.")
 
     args = parser.parse_args()
     p = _find_gleansh_path()
+    extra_args = '--no-dhcp-fallback' if args.no_dhcp_fallback else ''
 
     if args.quiet:
         logging.basicConfig(level=logging.ERROR)
@@ -98,7 +110,8 @@ def main():
     if os.path.exists('/etc/gentoo-release'):
         log.info('installing openrc services')
         install('glean.openrc', '/etc/init.d/glean',
-                replacements={'GLEANSH_PATH': p})
+                replacements={'GLEANSH_PATH': p,
+                              'EXTRA_ARGS': extra_args})
     # Needs to check for the presence of systemd and systemctl
     # as apparently some packages may stage systemd init files
     # when systemd is not present.
@@ -118,7 +131,8 @@ def main():
                 'glean-networkd.service',
                 '/lib/systemd/system/glean.service',
                 mode='0644',
-                replacements={'GLEANSH_PATH': p})
+                replacements={'GLEANSH_PATH': p,
+                              'EXTRA_ARGS': extra_args})
             subprocess.call(['systemctl', 'enable', 'glean.service'])
         else:
             log.info("Installing %s NetworkManager support" %
@@ -131,7 +145,8 @@ def main():
                 service_file,
                 '/usr/lib/systemd/system/glean@.service',
                 mode='0644',
-                replacements={'GLEANSH_PATH': p})
+                replacements={'GLEANSH_PATH': p,
+                              'EXTRA_ARGS': extra_args})
         install(
             'glean-udev.rules',
             '/etc/udev/rules.d/99-glean.rules',
@@ -161,12 +176,14 @@ def main():
 
     elif os.path.exists('/etc/init'):
         log.info("Installing upstart services")
-        install('glean.conf', '/etc/init/glean.conf')
+        install('glean.conf', '/etc/init/glean.conf',
+                replacements={'EXTRA_ARGS': extra_args})
     elif os.path.exists('/sbin/rc-update'):
         subprocess.call(['rc-update', 'add', 'glean', 'boot'])
     else:
         log.info("Installing sysv services")
-        install('glean.init', '/etc/init.d/glean')
+        install('glean.init', '/etc/init.d/glean',
+                replacements={'EXTRA_ARGS': extra_args})
         os.system('update-rc.d glean defaults')
 
 if __name__ == '__main__':

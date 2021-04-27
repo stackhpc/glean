@@ -310,6 +310,11 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
         if interface['type'] == 'manual':
             files_to_write.update(
                 _write_rh_manual(interface_name, interface, args))
+
+    if args.no_dhcp_fallback:
+        log.debug('DHCP fallback disabled')
+        return files_to_write
+
     for mac, iname in sorted(
             sys_interfaces.items(), key=lambda x: x[1]):
         if _exists_rh_interface(iname, args.distro):
@@ -569,6 +574,9 @@ def write_networkd_interfaces(interfaces, sys_interfaces, args):
             # We have a config drive config, move on
             log.debug("%s configured via config-drive" % mac)
             continue
+        if args.no_dhcp_fallback:
+            log.debug('DHCP fallback disabled')
+            continue
         interface = {'type': 'ipv4_dhcp', 'mac_address': mac}
         files_struct = _write_networkd_interface(
             iname, [interface], args, files_struct)
@@ -731,7 +739,7 @@ def _create_gentoo_net_symlink_and_enable(interface_name):
         _enable_gentoo_interface(interface_name)
 
 
-def write_gentoo_interfaces(interfaces, sys_interfaces):
+def write_gentoo_interfaces(interfaces, sys_interfaces, args):
     files_to_write = dict()
     gen_intfs = {}
     # Sort the interfaces by id so that we'll have consistent output order
@@ -774,6 +782,10 @@ def write_gentoo_interfaces(interfaces, sys_interfaces):
             _write_gentoo_interface(interface_name, interfs))
         _setup_gentoo_network_init(interface_name, interfs)
 
+    if args.no_dhcp_fallback:
+        log.debug('DHCP fallback disabled')
+        return files_to_write
+
     for mac, iname in sorted(
             sys_interfaces.items(), key=lambda x: x[1]):
         if _exists_gentoo_interface(iname):
@@ -812,7 +824,7 @@ def _write_debian_bond_conf(interface_name, interface, sys_interfaces):
     return result
 
 
-def write_debian_interfaces(interfaces, sys_interfaces):
+def write_debian_interfaces(interfaces, sys_interfaces, args):
     eni_path = '/etc/network/interfaces'
     eni_d_path = eni_path + '.d'
     files_to_write = dict()
@@ -923,6 +935,10 @@ def write_debian_interfaces(interfaces, sys_interfaces):
                                               interface,
                                               sys_interfaces)
         files_to_write[iface_path] = result
+
+    if args.no_dhcp_fallback:
+        log.debug('DHCP fallback disabled')
+        return files_to_write
 
     # Configure any interfaces not mentioned in the config drive data for DHCP.
     for mac, iname in sorted(
@@ -1069,14 +1085,14 @@ def write_static_network_info(
 
     if args.distro in ('debian', 'ubuntu'):
         files_to_write.update(
-            write_debian_interfaces(interfaces, sys_interfaces))
+            write_debian_interfaces(interfaces, sys_interfaces, args))
     elif args.distro in ('redhat', 'centos', 'fedora') or \
             _is_suse(args.distro):
         files_to_write.update(
             write_redhat_interfaces(interfaces, sys_interfaces, args))
     elif args.distro in 'gentoo':
         files_to_write.update(
-            write_gentoo_interfaces(interfaces, sys_interfaces)
+            write_gentoo_interfaces(interfaces, sys_interfaces, args)
         )
     elif args.distro in 'networkd':
         files_to_write.update(
@@ -1522,6 +1538,9 @@ def main(argv=None):
     parser.add_argument(
         '--debug', dest='debug', action='store_true',
         help="Enable debugging output")
+    parser.add_argument(
+        "--no-dhcp-fallback", action="store_true",
+        help="Do not fall back to DHCP")
     args = parser.parse_args(argv)
 
     if args.debug:

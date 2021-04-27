@@ -15,7 +15,7 @@ ConditionPathExists=!/etc/network/interfaces.d/%I.cfg
 Type=oneshot
 User=root
 Environment="ARGS=--interface %I"
-ExecStartPre=%%GLEANSH_PATH%%/glean.sh ${ARGS}
+ExecStartPre=%%GLEANSH_PATH%%/glean.sh ${ARGS} %%EXTRA_ARGS%%
 ExecStart=/sbin/ifup %I
 RemainAfterExit=true
 

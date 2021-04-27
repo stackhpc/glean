@@ -6,7 +6,7 @@ Requires=systemd-networkd.service
 [Service]
 Type=oneshot
 User=root
-ExecStart=%%GLEANSH_PATH%%/glean.sh --distro networkd
+ExecStart=%%GLEANSH_PATH%%/glean.sh --distro networkd %%EXTRA_ARGS%%
 RemainAfterExit=true
 
 [Install]
