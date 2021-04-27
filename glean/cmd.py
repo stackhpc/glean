@@ -26,6 +26,7 @@ import subprocess
 import sys
 import time
 
+from glean import install
 from glean import systemlock
 from glean import utils
 from glean._vendor import distro
@@ -959,7 +960,10 @@ def write_debian_interfaces(interfaces, sys_interfaces, args):
     return files_to_write
 
 
-def write_dns_info(dns_servers):
+def write_dns_info(dns_servers, args):
+    # exit early if there are no DNS servers
+    if not dns_servers:
+        return {}
     # will fail on non-systemd systems (what we want)
     # will exit 1 if not enabled (what we want)
     # will exit 0 if enabled (or indirectly enabled)
@@ -994,6 +998,12 @@ def write_dns_info(dns_servers):
         resolved_conf_fd.close()
         # add the config to files to be written
         resolve_confs['/etc/systemd/resolved.conf'] = resolved_conf_output
+    # make sure NetworkManager does not override our configuration
+    if args.use_nm:
+        install.install(
+            'nm-no-resolv-handling.conf',
+            '/etc/NetworkManager/conf.d/nm-no-resolv-handling.conf',
+            mode='0644')
     return resolve_confs
 
 
@@ -1383,7 +1393,7 @@ def write_network_info_from_config_drive(args, meta_data):
 
     dns = {}
     if not args.skip_dns:
-        dns = write_dns_info(get_dns_from_config_drive(network_info))
+        dns = write_dns_info(get_dns_from_config_drive(network_info), args)
     interfaces = get_config_drive_interfaces(network_info)
     if 'meta' in meta_data and 'glean_ignore_interfaces' in meta_data['meta']:
         # Force DHCP to be used ignoring the interface information.

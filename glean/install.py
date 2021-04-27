@@ -152,12 +152,6 @@ def main():
             '/etc/udev/rules.d/99-glean.rules',
             mode='0644')
         if args.use_nm:
-            # glean handles resolv.conf, so this turns off nm touching
-            # it
-            install('nm-no-resolv-handling.conf',
-                    '/etc/NetworkManager/conf.d/nm-no-resolv-handling.conf',
-                    mode='0644')
-
             # NetworkManager has a "after" network-pre, and
             # glean@<interface> services have a "before".  However, if
             # udev has not yet triggered and started the glean
