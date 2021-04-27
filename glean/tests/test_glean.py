@@ -17,8 +17,11 @@ import errno
 import functools
 import json
 import os
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
-import mock
 from oslotest import base
 from testscenarios import load_tests_apply_scenarios as load_tests  # noqa
 
