@@ -13,6 +13,8 @@
         - dib-nodepool-functional-openstack-centos-8-src
         - dib-nodepool-functional-openstack-ubuntu-xenial-src
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
+        - dib-nodepool-functional-openstack-ubuntu-focal-src
+        - dib-nodepool-functional-openstack-debian-bullseye-src
     gate:
       jobs:
         - opendev-buildset-registry
@@ -21,11 +23,11 @@
         - dib-nodepool-functional-openstack-centos-8-src
         - dib-nodepool-functional-openstack-ubuntu-xenial-src
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
+        - dib-nodepool-functional-openstack-ubuntu-focal-src
+        - dib-nodepool-functional-openstack-debian-bullseye-src
     experimental:
       jobs:
         - opendev-buildset-registry
         - nodepool-build-image-siblings
-        - dib-nodepool-functional-openstack-debian-stretch-src
-        - dib-nodepool-functional-openstack-debian-buster-src
         - dib-nodepool-functional-openstack-opensuse-15-src
         - dib-nodepool-functional-openstack-opensuse-tumbleweed-src
