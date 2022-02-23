@@ -16,6 +16,7 @@
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
         - dib-nodepool-functional-openstack-ubuntu-focal-src
         - dib-nodepool-functional-openstack-debian-bullseye-src
+        - dib-nodepool-functional-openstack-rockylinux-8-containerfile-src
     gate:
       jobs:
         - opendev-buildset-registry
@@ -27,6 +28,7 @@
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
         - dib-nodepool-functional-openstack-ubuntu-focal-src
         - dib-nodepool-functional-openstack-debian-bullseye-src
+        - dib-nodepool-functional-openstack-rockylinux-8-containerfile-src
     experimental:
       jobs:
         - opendev-buildset-registry

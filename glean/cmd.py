@@ -1095,7 +1095,7 @@ def write_static_network_info(
     if args.distro in ('debian', 'ubuntu'):
         files_to_write.update(
             write_debian_interfaces(interfaces, sys_interfaces, args))
-    elif args.distro in ('redhat', 'centos', 'fedora') or \
+    elif args.distro in ('redhat', 'centos', 'fedora', 'rocky') or \
             _is_suse(args.distro):
         files_to_write.update(
             write_redhat_interfaces(interfaces, sys_interfaces, args))
@@ -1184,7 +1184,7 @@ def is_interface_vlan(iface, distro):
         file_name = '/etc/network/interfaces.d/%s.cfg' % iface
         if os.path.exists(file_name):
             return 'vlan-raw-device' in open(file_name).read()
-    elif distro in ('redhat', 'centos', 'fedora'):
+    elif distro in ('redhat', 'centos', 'fedora', 'rocky'):
         file_name = '/etc/sysconfig/network-scripts/ifcfg-%s' % iface
         if os.path.exists(file_name):
             return 'VLAN=YES' in open(file_name).read()
@@ -1205,7 +1205,7 @@ def is_interface_bridge(iface, distro):
         file_name = '/etc/network/interfaces.d/%s.cfg' % iface
         if os.path.exists(file_name):
             return 'bridge_ports' in open(file_name).read().lower()
-    elif distro in ('redhat', 'centos', 'fedora'):
+    elif distro in ('redhat', 'centos', 'fedora', 'rocky'):
         file_name = '/etc/sysconfig/network-scripts/ifcfg-%s' % iface
         if os.path.exists(file_name):
             return 'type=bridge' in open(file_name).read().lower()

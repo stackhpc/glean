@@ -32,7 +32,7 @@ sample_data_path = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'fixtures')
 
 distros = ['Ubuntu', 'Debian', 'Fedora', 'RedHat', 'CentOS', 'Gentoo',
-           'openSUSE', 'networkd']
+           'openSUSE', 'networkd', 'Rocky']
 styles = ['hp', 'rax', 'rax-iad', 'liberty', 'nokey', 'ovh']
 ips = {'hp': '127.0.1.1',
        'rax': '23.253.229.154',
