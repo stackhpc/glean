@@ -26,6 +26,7 @@ import subprocess
 import sys
 import time
 
+from collections import defaultdict
 from glean._vendor import distro
 from glean import install
 from glean import systemlock
@@ -288,10 +289,9 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
     interfaces = _interfaces
 
     # Sort the interfaces by id so that we'll have consistent output order
+    _interfaces_by_sys_name = defaultdict(list)
     for iname, interface in sorted(
             interfaces.items(), key=lambda x: x[1]['id']):
-        if interface['type'] == 'ipv6':
-            continue
 
         if 'vlan_id' in interface:
             # raw_macs will have a single entry if the vlan device is a
@@ -311,15 +311,37 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
         else:
             interface_name = sys_interfaces[interface['mac_address']]
 
+        # This is a dict that lists the networks associated with a
+        # device; so like:
+        #  _interfaces_by_sys_name['eth0'] = [
+        #     <ipv4_interface>, <ipv6_interface>
+        #  ]
+        _interfaces_by_sys_name[interface_name].append(interface)
+
+    for _name, _interfaces in _interfaces_by_sys_name.items():
+        # NOTE(ianw) 2022-05-25 : this is all *terrible* and should
+        # definitely be refactored.  "interfaces" is a really bad term
+        # used everywhere here.  It's actually the "networks" key of
+        # the configdrive metadata.  We stick to the term to avoid
+        # even more confusion.
+
+        # remove ipv6; we don't support them (yet).  There should only
+        # be one set of network setup details after ipv6 is removed.
+        if len(_interfaces) > 1:
+            _interfaces = [
+                x for x in _interfaces if not x['type'].startswith('ipv6')]
+        assert(len(_interfaces) == 1)
+        interface = _interfaces[0]
+        logging.debug("Processing : %s -> %s" % (_name, interface))
         if interface['type'] == 'ipv4':
             files_to_write.update(
-                _write_rh_interface(interface_name, interface, args))
+                _write_rh_interface(_name, interface, args))
         if interface['type'] == 'ipv4_dhcp':
             files_to_write.update(
-                _write_rh_dhcp(interface_name, interface, args))
+                _write_rh_dhcp(_name, interface, args))
         if interface['type'] == 'manual':
             files_to_write.update(
-                _write_rh_manual(interface_name, interface, args))
+                _write_rh_manual(_name, interface, args))
 
     if args.no_dhcp_fallback:
         log.debug('DHCP fallback disabled')
