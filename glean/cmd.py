@@ -87,11 +87,13 @@ def _network_files(distro):
         network_files = {
             "ifcfg": "/etc/sysconfig/network/ifcfg",
             "route": "/etc/sysconfig/network/ifroute",
+            "route6": "/etc/sysconfig/network/ifroute6",
         }
     else:
         network_files = {
             "ifcfg": "/etc/sysconfig/network-scripts/ifcfg",
             "route": "/etc/sysconfig/network-scripts/route",
+            "route6": "/etc/sysconfig/network-scripts/route6",
         }
 
     return network_files
@@ -170,6 +172,57 @@ def _set_rh_vlan(name, interface, distro):
         results += "VLAN=yes\n"
 
     return results
+
+
+def _write_rh_interfaces(name, interfaces, args):
+    files = {}
+    # Sort the interfaces by type.  ipv4 should come before ipv6.  We
+    # need to process ipv4 first; it builds the base config file.
+    # _write_rh_v6_interface() then adds ipv6 info.  See prior notes
+    # about this being a hack that should all be refactored.
+    for interface in sorted(interfaces, key=lambda x: x['type']):
+        if interface['type'] == 'ipv4':
+            files = _write_rh_interface(name, interface, args)
+        elif interface['type'] == 'ipv4_dhcp':
+            files = _write_rh_dhcp(name, interface, args)
+        elif interface['type'] == 'ipv6':
+            files = _write_rh_v6_interface(name, interface, args, files)
+    return files
+
+
+def _write_rh_v6_interface(name, interface, args, files):
+    config_file = _network_files(args.distro)["ifcfg"] + '-%s' % name
+    # We should already have this config file key key, we need to
+    # append to it
+    assert(config_file in files)
+    config_data = files[config_file]
+    config_data += 'IPV6INIT=yes\n'
+    config_data += 'IPV6_AUTOCONF=no\n'
+    config_data += 'IPV6_PRIVACY=no\n'
+    config_data += 'IPV6ADDR=%s/%d\n' % (
+        interface['ip_address'],
+        utils.ipv6_netmask_length(interface['netmask']))
+    files[config_file] = config_data
+
+    routes = ''
+    for route in interface.get('routes', ()):
+        netmask = utils.ipv6_netmask_length(route['netmask'])
+        if route['network'] == '::':
+            routes += 'default via {0}{1} dev {2} metric 1\n'.format(
+                route['gateway'],
+                ("/%d" % netmask) if netmask else '',
+                name
+            )
+        else:
+            netmask = utils.ipv6_netmask_length(route['netmask'])
+            routes += '{0}{1} via {2}\n'.format(
+                route['network'],
+                ("/%d" % netmask) if netmask else '',
+                route['gateway']
+            )
+    route6_file = _network_files(args.distro)['route6'] + '-%s' % name
+    files[route6_file] = routes
+    return files
 
 
 def _write_rh_interface(name, interface, args):
@@ -312,23 +365,25 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
         # the configdrive metadata.  We stick to the term to avoid
         # even more confusion.
 
-        # remove ipv6; we don't support them (yet).  There should only
-        # be one set of network setup details after ipv6 is removed.
+        # This function handles when a device has more than one
+        # interface/network attached.  As I have noted, this is a mess
+        # and should all be refactored.
         if len(_interfaces) > 1:
-            _interfaces = [
-                x for x in _interfaces if not x['type'].startswith('ipv6')]
-        assert(len(_interfaces) == 1)
-        interface = _interfaces[0]
-        logging.debug("Processing : %s -> %s" % (_name, interface))
-        if interface['type'] == 'ipv4':
             files_to_write.update(
-                _write_rh_interface(_name, interface, args))
-        if interface['type'] == 'ipv4_dhcp':
-            files_to_write.update(
-                _write_rh_dhcp(_name, interface, args))
-        if interface['type'] == 'manual':
-            files_to_write.update(
-                _write_rh_manual(_name, interface, args))
+                _write_rh_interfaces(_name, _interfaces, args))
+        else:
+            assert(len(_interfaces) == 1)
+            interface = _interfaces[0]
+            logging.debug("Processing : %s -> %s" % (_name, interface))
+            if interface['type'] == 'ipv4':
+                files_to_write.update(
+                    _write_rh_interface(_name, interface, args))
+            if interface['type'] == 'ipv4_dhcp':
+                files_to_write.update(
+                    _write_rh_dhcp(_name, interface, args))
+            if interface['type'] == 'manual':
+                files_to_write.update(
+                    _write_rh_manual(_name, interface, args))
 
     if args.no_dhcp_fallback:
         log.debug('DHCP fallback disabled')
