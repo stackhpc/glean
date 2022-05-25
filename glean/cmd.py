@@ -263,33 +263,16 @@ def _write_rh_manual(name, interface, args):
 
 def write_redhat_interfaces(interfaces, sys_interfaces, args):
     files_to_write = dict()
-    # Sort the interfaces by id so that we'll have consistent output order
-    for iname, interface in sorted(
-            interfaces.items(), key=lambda x: x[1]['id']):
-        if interface['type'] == 'ipv6':
-            continue
+
+    # Strip out ignored interfaces
+    _interfaces = {}
+    for iname, interface in interfaces.items():
         # sys_interfaces is pruned by --interface; if one of the
         # raw_macs (or, *the* MAC for single interfaces) does not
         # match as one of the interfaces we want configured, skip
         raw_macs = interface.get('raw_macs', [interface['mac_address']])
         if not set(sys_interfaces).intersection(set(raw_macs)):
             continue
-
-        if 'vlan_id' in interface:
-            # raw_macs will have a single entry if the vlan device is a
-            # phsical device and >1 when it is a bond device.
-            if len(raw_macs) == 1:
-                vlan_raw_device = sys_interfaces.get(raw_macs[0])
-            else:
-                vlan_raw_device = interface['vlan_link']
-            interface_name = "{0}.{1}".format(
-                vlan_raw_device, interface['vlan_id'])
-        elif 'bond_mode' in interface:
-            # It is possible our interface does not have a link, so fall back
-            # to iname which is the link id.
-            interface_name = interface.get('link', iname)
-        else:
-            interface_name = sys_interfaces[interface['mac_address']]
 
         if 'bond_links' in interface:
             # We need to keep track of the slave interfaces because
@@ -300,6 +283,33 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
             interface['bond_slaves'] = bond_slaves
             # Remove the 'bond_links' key
             interface.pop('bond_links')
+
+        _interfaces[iname] = interface
+    interfaces = _interfaces
+
+    # Sort the interfaces by id so that we'll have consistent output order
+    for iname, interface in sorted(
+            interfaces.items(), key=lambda x: x[1]['id']):
+        if interface['type'] == 'ipv6':
+            continue
+
+        if 'vlan_id' in interface:
+            # raw_macs will have a single entry if the vlan device is a
+            # phsical device and >1 when it is a bond device.
+            raw_macs = interface.get('raw_macs', [interface['mac_address']])
+            if len(raw_macs) == 1:
+                vlan_raw_device = sys_interfaces.get(raw_macs[0])
+            else:
+                vlan_raw_device = interface['vlan_link']
+            interface_name = "{0}.{1}".format(
+                vlan_raw_device, interface['vlan_id'])
+
+        elif 'bond_mode' in interface:
+            # It is possible our interface does not have a link, so fall back
+            # to iname which is the link id.
+            interface_name = interface.get('link', iname)
+        else:
+            interface_name = sys_interfaces[interface['mac_address']]
 
         if interface['type'] == 'ipv4':
             files_to_write.update(
