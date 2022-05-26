@@ -10,6 +10,7 @@ IPADDR=146.20.110.113
 NETMASK=255.255.255.0
 ONBOOT=yes
 %NM_CONTROLLED%
+TYPE=Ethernet
 DEFROUTE=yes
 GATEWAY=146.20.110.1
 ### Write /etc/sysconfig/network-scripts/ifcfg-eth1
@@ -21,6 +22,7 @@ IPADDR=10.210.32.174
 NETMASK=255.255.224.0
 ONBOOT=yes
 %NM_CONTROLLED%
+TYPE=Ethernet
 ### Write /etc/sysconfig/network-scripts/route-eth1
 ADDRESS0=10.176.0.0
 NETMASK0=255.240.0.0

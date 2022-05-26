@@ -10,6 +10,7 @@ IPADDR=23.253.229.154
 NETMASK=255.255.255.0
 ONBOOT=yes
 %NM_CONTROLLED%
+TYPE=Ethernet
 DEFROUTE=yes
 GATEWAY=23.253.229.1
 ### Write /etc/sysconfig/network-scripts/ifcfg-eth1
@@ -21,6 +22,7 @@ IPADDR=10.208.169.118
 NETMASK=255.255.224.0
 ONBOOT=yes
 %NM_CONTROLLED%
+TYPE=Ethernet
 ### Write /etc/sysconfig/network-scripts/ifcfg-eth3
 # Automatically generated, do not edit
 DEVICE=eth3

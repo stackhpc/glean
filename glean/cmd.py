@@ -119,17 +119,15 @@ def _network_config(args):
         footer = "\n".join(["ONBOOT=yes",
                             "NM_CONTROLLED=%s" %
                             ("yes" if args.use_nm else "no"),
-                            "TYPE=Ethernet"]) + "\n"
+                            "TYPE=Ethernet"]) + '\n'
 
         network_config = {
-            # RedHat does not use TYPE=Ethernet in the static configurations
             "static": "\n".join([header,
                                  "IPADDR={ip_address}",
                                  "NETMASK={netmask}",
-                                 footer.replace("TYPE=Ethernet\n", "")])
+                                 footer])
         }
 
-    # RedHat does not use TYPE=Ethernet in the dhcp configurations
     network_config["dhcp"] = "\n".join([header, footer])
     network_config["none"] = "\n".join([header, footer])
 
