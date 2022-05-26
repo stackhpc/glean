@@ -24,6 +24,7 @@ import logging
 import os
 import subprocess
 import sys
+import textwrap
 import time
 
 from collections import defaultdict
@@ -98,40 +99,26 @@ def _network_files(distro):
 
 def _network_config(args):
     distro = args.distro
-    network_config = {}
+
     if _is_suse(distro):
-        header = "\n".join(["# Automatically generated, do not edit",
-                            "BOOTPROTO={bootproto}",
-                            "LLADDR={hwaddr}"])
-        footer = "STARTMODE=auto" + "\n"
-
-        network_config = {
-            "static": "\n".join([header,
-                                 "IPADDR={ip_address}",
-                                 "NETMASK={netmask}",
-                                 footer])
-        }
+        preamble = textwrap.dedent("""\
+        # Automatically generated, do not edit
+        BOOTPROTO={bootproto}
+        LLADDR={hwaddr}
+        STARTMODE=auto
+        """)
     else:
-        header = "\n".join(["# Automatically generated, do not edit",
-                            "DEVICE={name}",
-                            "BOOTPROTO={bootproto}",
-                            "HWADDR={hwaddr}"])
-        footer = "\n".join(["ONBOOT=yes",
-                            "NM_CONTROLLED=%s" %
-                            ("yes" if args.use_nm else "no"),
-                            "TYPE=Ethernet"]) + '\n'
+        preamble = textwrap.dedent("""\
+        # Automatically generated, do not edit
+        DEVICE={name}
+        BOOTPROTO={bootproto}
+        HWADDR={hwaddr}
+        ONBOOT=yes
+        NM_CONTROLLED=%s
+        TYPE=Ethernet
+        """ % ("yes" if args.use_nm else "no"))
 
-        network_config = {
-            "static": "\n".join([header,
-                                 "IPADDR={ip_address}",
-                                 "NETMASK={netmask}",
-                                 footer])
-        }
-
-    network_config["dhcp"] = "\n".join([header, footer])
-    network_config["none"] = "\n".join([header, footer])
-
-    return network_config
+    return preamble
 
 
 def _set_rh_bonding(name, interface, distro, results):
@@ -188,13 +175,15 @@ def _set_rh_vlan(name, interface, distro):
 def _write_rh_interface(name, interface, args):
     distro = args.distro
     files_to_write = dict()
-    results = _network_config(args)["static"].format(
+    results = _network_config(args).format(
         bootproto="static",
         name=name,
         hwaddr=interface['mac_address'],
-        ip_address=interface['ip_address'],
-        netmask=interface['netmask'],
     )
+
+    results += 'IPADDR=%s\n' % interface['ip_address']
+    results += 'NETMASK=%s\n' % interface['netmask']
+
     results += _set_rh_vlan(name, interface, distro)
     # set_rh_bonding takes results as argument so we need to assign
     # the return value, not append it
@@ -237,7 +226,7 @@ def _write_rh_interface(name, interface, args):
 def _write_rh_dhcp(name, interface, args):
     distro = args.distro
     filename = _network_files(distro)["ifcfg"] + '-{name}'.format(name=name)
-    results = _network_config(args)["dhcp"].format(
+    results = _network_config(args).format(
         bootproto="dhcp", name=name, hwaddr=interface['mac_address'])
     results += _set_rh_vlan(name, interface, distro)
     # set_rh_bonding takes results as argument so we need to assign
@@ -250,7 +239,7 @@ def _write_rh_dhcp(name, interface, args):
 def _write_rh_manual(name, interface, args):
     distro = args.distro
     filename = _network_files(distro)["ifcfg"] + '-{name}'.format(name=name)
-    results = _network_config(args)["none"].format(
+    results = _network_config(args).format(
         bootproto="none", name=name, hwaddr=interface['mac_address'])
     results += _set_rh_vlan(name, interface, distro)
     # set_rh_bonding takes results as argument so we need to assign
