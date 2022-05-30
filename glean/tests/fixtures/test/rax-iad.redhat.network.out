@@ -17,6 +17,7 @@ IPV6INIT=yes
 IPV6_AUTOCONF=no
 IPV6_PRIVACY=no
 IPV6ADDR=2001:4802:7807:103:be76:4eff:fe20:d72f/64
+IPV6_DEFAULTGW=fe80::def
 ### Write /etc/sysconfig/network-scripts/ifcfg-eth1
 # Automatically generated, do not edit
 DEVICE=eth1
@@ -35,5 +36,4 @@ ADDRESS1=10.208.0.0
 NETMASK1=255.240.0.0
 GATEWAY1=10.210.32.1
 ### Write /etc/sysconfig/network-scripts/route6-eth0
-default via fe80::def dev eth0 metric 1
 fd30::/48 via fe80::f001

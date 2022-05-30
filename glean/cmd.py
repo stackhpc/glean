@@ -202,26 +202,34 @@ def _write_rh_v6_interface(name, interface, args, files):
     config_data += 'IPV6ADDR=%s/%d\n' % (
         interface['ip_address'],
         utils.ipv6_netmask_length(interface['netmask']))
-    files[config_file] = config_data
 
     routes = ''
     for route in interface.get('routes', ()):
         netmask = utils.ipv6_netmask_length(route['netmask'])
         if route['network'] == '::':
-            routes += 'default via {0}{1} dev {2} metric 1\n'.format(
+            # The default gateway should be specified in the
+            # ifcfg-<interface> file.  Putting default routes in
+            # routes<6>-<interface> definitely doesn't work with
+            # centos7.
+            config_data += 'IPV6_DEFAULTGW={0}{1}\n'.format(
                 route['gateway'],
-                ("/%d" % netmask) if netmask else '',
-                name
-            )
+                ("/%d" % netmask) if netmask else '')
         else:
+            # Otherwise use "policy routing" mode.  The IPv4 mode is
+            # called "Netmask Directives" (ADDRESS0/GATEWAY0/NETMASK0)
+            # and it's not clear these support ipv6.
             netmask = utils.ipv6_netmask_length(route['netmask'])
             routes += '{0}{1} via {2}\n'.format(
                 route['network'],
                 ("/%d" % netmask) if netmask else '',
                 route['gateway']
             )
+    # Only write the routes file if we have extra routes
     route6_file = _network_files(args.distro)['route6'] + '-%s' % name
-    files[route6_file] = routes
+    if routes:
+        files[route6_file] = routes
+
+    files[config_file] = config_data
     return files
 
 
