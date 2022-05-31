@@ -185,7 +185,7 @@ def _write_rh_interfaces(name, interfaces, args):
             files = _write_rh_interface(name, interface, args)
         elif interface['type'] == 'ipv4_dhcp':
             files = _write_rh_dhcp(name, interface, args)
-        elif interface['type'] == 'ipv6':
+        elif interface['type'] in ('ipv6', 'ipv6_slaac'):
             files = _write_rh_v6_interface(name, interface, args, files)
     return files
 
@@ -197,11 +197,14 @@ def _write_rh_v6_interface(name, interface, args, files):
     assert(config_file in files)
     config_data = files[config_file]
     config_data += 'IPV6INIT=yes\n'
-    config_data += 'IPV6_AUTOCONF=no\n'
     config_data += 'IPV6_PRIVACY=no\n'
-    config_data += 'IPV6ADDR=%s/%d\n' % (
-        interface['ip_address'],
-        utils.ipv6_netmask_length(interface['netmask']))
+    if interface['type'] == 'ipv6_slaac':
+        config_data += 'IPV6_AUTOCONF=yes\n'
+    else:
+        config_data += 'IPV6_AUTOCONF=no\n'
+        config_data += 'IPV6ADDR=%s/%d\n' % (
+            interface['ip_address'],
+            utils.ipv6_netmask_length(interface['netmask']))
 
     routes = ''
     for route in interface.get('routes', ()):
