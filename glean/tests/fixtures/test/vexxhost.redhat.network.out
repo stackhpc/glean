@@ -1,0 +1,14 @@
+### Write /etc/resolv.conf
+nameserver 199.204.44.24
+nameserver 199.204.47.54
+### Write /etc/sysconfig/network-scripts/ifcfg-ens3
+# Automatically generated, do not edit
+DEVICE=ens3
+BOOTPROTO=dhcp
+HWADDR=fa:16:3e:d1:1f:b2
+ONBOOT=yes
+%NM_CONTROLLED%
+TYPE=Ethernet
+IPV6INIT=yes
+IPV6_PRIVACY=no
+IPV6_AUTOCONF=yes

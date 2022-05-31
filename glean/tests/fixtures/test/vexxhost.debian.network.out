@@ -1,0 +1,10 @@
+### Write /etc/resolv.conf
+nameserver 199.204.44.24
+nameserver 199.204.47.54
+### Write /etc/network/interfaces
+auto lo
+iface lo inet loopback
+source /etc/network/interfaces.d/*.cfg
+### Write /etc/network/interfaces.d/ens3.cfg
+auto ens3
+iface ens3 inet dhcp

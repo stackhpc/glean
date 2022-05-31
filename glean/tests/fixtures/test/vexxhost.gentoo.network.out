@@ -1,0 +1,9 @@
+### Write /etc/resolv.conf
+nameserver 199.204.44.24
+nameserver 199.204.47.54
+### Write /etc/conf.d/net.ens3
+# Automatically generated, do not edit
+config_ens3="dhcp"
+mac_ens3="fa:16:3e:d1:1f:b2"
+config_ens3="dhcp"
+mac_ens3="fa:16:3e:d1:1f:b2"

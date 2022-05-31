@@ -1,0 +1,11 @@
+### Write /etc/resolv.conf
+nameserver 199.204.44.24
+nameserver 199.204.47.54
+### Write /etc/sysconfig/network/ifcfg-ens3
+# Automatically generated, do not edit
+BOOTPROTO=dhcp
+LLADDR=fa:16:3e:d1:1f:b2
+STARTMODE=auto
+IPV6INIT=yes
+IPV6_PRIVACY=no
+IPV6_AUTOCONF=yes

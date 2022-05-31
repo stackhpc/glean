@@ -1,0 +1,14 @@
+### Write /etc/systemd/resolved.conf
+[Resolve]
+DNS = 199.204.44.24 199.204.47.54
+
+### Write /etc/systemd/network/ens3.network
+# Automatically generated, do not edit
+[Match]
+MACAddress=fa:16:3e:d1:1f:b2
+Name=ens3
+
+[Network]
+DHCP=ipv4
+IPv6AcceptRA=yes
+

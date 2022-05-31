@@ -33,12 +33,23 @@ sample_data_path = os.path.join(
 
 distros = ['Ubuntu', 'Debian', 'Fedora', 'RedHat', 'CentOS', 'Gentoo',
            'openSUSE', 'networkd', 'Rocky']
-styles = ['hp', 'rax', 'rax-iad', 'liberty', 'nokey']
+styles = ['hp', 'rax', 'rax-iad', 'liberty', 'nokey', 'vexxhost']
+
 ips = {'hp': '127.0.1.1',
        'rax': '23.253.229.154',
        'rax-iad': '146.20.110.113',
        'liberty': '23.253.229.154',
-       'nokey': '127.0.1.1'}
+       'nokey': '127.0.1.1',
+       'vexxhost': '2604:e100:1:0:f816:3eff:fed1:1fb2'}
+
+interfaces = {
+    'hp': 'eth0',
+    'rax': 'eth0',
+    'rax-iad': 'eth0',
+    'liberty': 'eth0',
+    'nokey': 'eth0',
+    'vexxhost': 'ens3',
+}
 
 built_scenarios = []
 for distro in distros:
@@ -292,11 +303,12 @@ class TestGlean(base.BaseTestCase):
     def test_glean_systemd(self):
         with mock.patch('glean.systemlock.Lock'):
             self._assert_distro_provider(self.distro, self.style,
-                                         'eth0', skip_dns=True)
+                                         interfaces[self.style], skip_dns=True)
 
     def test_glean_systemd_resolved(self):
         with mock.patch('glean.systemlock.Lock'):
-            self._assert_distro_provider(self.distro, self.style, 'eth0')
+            self._assert_distro_provider(self.distro, self.style,
+                                         interfaces[self.style])
 
     def test_glean_skip_dns(self):
         with mock.patch('glean.systemlock.Lock'):
@@ -306,4 +318,4 @@ class TestGlean(base.BaseTestCase):
     def test_glean_nm(self):
         with mock.patch('glean.systemlock.Lock'):
             self._assert_distro_provider(
-                self.distro, self.style, 'eth0', use_nm=True)
+                self.distro, self.style, interfaces[self.style], use_nm=True)
