@@ -174,22 +174,6 @@ def _set_rh_vlan(name, interface, distro):
     return results
 
 
-def _write_rh_interfaces(name, interfaces, args):
-    files = {}
-    # Sort the interfaces by type.  ipv4 should come before ipv6.  We
-    # need to process ipv4 first; it builds the base config file.
-    # _write_rh_v6_interface() then adds ipv6 info.  See prior notes
-    # about this being a hack that should all be refactored.
-    for interface in sorted(interfaces, key=lambda x: x['type']):
-        if interface['type'] == 'ipv4':
-            files = _write_rh_interface(name, interface, args)
-        elif interface['type'] == 'ipv4_dhcp':
-            files = _write_rh_dhcp(name, interface, args)
-        elif interface['type'] in ('ipv6', 'ipv6_slaac'):
-            files = _write_rh_v6_interface(name, interface, args, files)
-    return files
-
-
 def _write_rh_v6_interface(name, interface, args, files):
     config_file = _network_files(args.distro)["ifcfg"] + '-%s' % name
     # We should already have this config file key key, we need to
@@ -370,36 +354,46 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
         _interfaces_by_sys_name[interface_name].append(interface)
 
     for _name, _interfaces in _interfaces_by_sys_name.items():
-        # NOTE(ianw) 2022-05-25 : this is all *terrible* and should
-        # definitely be refactored.  "interfaces" is a really bad term
-        # used everywhere here.  It's actually the "networks" key of
-        # the configdrive metadata.  We stick to the term to avoid
-        # even more confusion.
 
-        # This function handles when a device has more than one
-        # interface/network attached.  As I have noted, this is a mess
-        # and should all be refactored.
-        if len(_interfaces) > 1:
-            files_to_write.update(
-                _write_rh_interfaces(_name, _interfaces, args))
-        else:
-            assert(len(_interfaces) == 1)
-            interface = _interfaces[0]
-            logging.debug("Processing : %s -> %s" % (_name, interface))
+        # Sort the interfaces by type.  ipv4 should come before ipv6.
+        # We need to process ipv4 first; it builds the base config
+        # file (because when written we only dealt with ipv4).
+        # _write_rh_v6_interface() then adds ipv6 info, which is why
+        # it gets passed "files_to_write".
+        #
+        # NOTE(ianw) : 2022-06-01 It would definitely be better to
+        # refactor this in a way that does more like a generic
+        # template that each possible interface type fills in, rather
+        # than relying on ordering like this.  The term "interfaces"
+        # is a bit of a misnomer, and it's really a network being
+        # setup on what we'd think of as an interface (eth<X>, etc.).
+        # This could also be cleaned up to be clearer.
+        for interface in sorted(_interfaces, key=lambda x: x['type']):
+            logging.debug("Processing interface %s/%s" %
+                          (_name, interface['type']))
             if interface['type'] == 'ipv4':
                 files_to_write.update(
                     _write_rh_interface(_name, interface, args))
-            if interface['type'] == 'ipv4_dhcp':
+            elif interface['type'] == 'ipv4_dhcp':
                 files_to_write.update(
                     _write_rh_dhcp(_name, interface, args))
-            if interface['type'] == 'manual':
+            elif interface['type'] == 'manual':
                 files_to_write.update(
                     _write_rh_manual(_name, interface, args))
+            elif interface['type'] in ('ipv6', 'ipv6_slaac'):
+                files_to_write.update(
+                    _write_rh_v6_interface(_name,
+                                           interface, args, files_to_write))
+            else:
+                logging.error(
+                    "Unhandled interface %s/%s" % (_name, interface['type']))
 
     if args.no_dhcp_fallback:
         log.debug('DHCP fallback disabled')
         return files_to_write
 
+    # Strip out anything that has now been configured, the rest falls
+    # back to simple DHCP
     for mac, iname in sorted(
             sys_interfaces.items(), key=lambda x: x[1]):
         if _exists_rh_interface(iname, args.distro):
