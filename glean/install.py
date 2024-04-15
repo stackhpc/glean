@@ -16,16 +16,36 @@
 import argparse
 import logging
 import os
-import pkg_resources
 import subprocess
 import sys
 
 log = logging.getLogger("glean-install")
 
 
+# Define a proper class based context manager here for maximum cross
+# python compatibility (contextlib.nullcontext is what we want but not
+# available everywhere).
+class NullPathContext(object):
+    def __init__(self, path):
+        self.path = path
+
+    def __enter__(self):
+        return self.path
+
+    def __exit__(self, *args):
+        pass
+
+
 def _find_scripts_dir():
-    p = pkg_resources.resource_filename(__name__, "init")
-    return p
+    try:
+        import pkg_resources
+        p = pkg_resources.resource_filename(__name__, "init")
+        return NullPathContext(p)
+    except ImportError:
+        # This code only works on directories in python3.12 or newer
+        # and init/ is a directory.
+        import importlib.resources as ires
+        return ires.as_file(ires.files(__name__).joinpath('init'))
 
 
 def install(source_file, target_file, mode='0755', replacements=dict()):
@@ -43,15 +63,16 @@ def install(source_file, target_file, mode='0755', replacements=dict()):
 
     log.info("Installing %s -> %s" % (source_file, target_file))
 
-    script_dir = _find_scripts_dir()
+    res_mgr = _find_scripts_dir()
 
-    cmd = ('install -D -g root -o root'
-           ' -m {mode} {source_file} {target_file}').format(
-               source_file=os.path.join(script_dir, source_file),
-               target_file=target_file,
-               mode=mode)
-    log.info(cmd)
-    ret = os.system(cmd)
+    with res_mgr as script_dir:
+        cmd = ('install -D -g root -o root'
+               ' -m {mode} {source_file} {target_file}').format(
+                   source_file=os.path.join(script_dir, source_file),
+                   target_file=target_file,
+                   mode=mode)
+        log.info(cmd)
+        ret = os.system(cmd)
     if ret != 0:
         log.error("Failed to install %s!" % source_file)
         sys.exit(ret)
@@ -91,7 +112,6 @@ def main():
                              "it will be left unconfigured.")
 
     args = parser.parse_args()
-    p = _find_scripts_dir()
     extra_args = '--no-dhcp-fallback' if args.no_dhcp_fallback else ''
 
     if args.quiet:
@@ -99,18 +119,21 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO)
 
-    replacements = {
-        'INTERP': sys.executable,
-        'GLEAN_SCRIPTS_DIR': p,
-        'EXTRA_ARGS': extra_args,
-    }
+    res_mgr = _find_scripts_dir()
+    with res_mgr as script_dir:
+        replacements = {
+            'INTERP': sys.executable,
+            'GLEAN_SCRIPTS_DIR': script_dir,
+            'EXTRA_ARGS': extra_args,
+        }
 
-    # Write the path of the currently executing interpreter into the
-    # scripts dir.  This means glean shell scripts can call the
-    # sibling python-glean and know that it's using the glean we
-    # installed, even in a virtualenv etc.
-    install('python-glean.template', os.path.join(p, 'python-glean'),
-            mode='0755', replacements=replacements)
+        # Write the path of the currently executing interpreter into the
+        # scripts dir.  This means glean shell scripts can call the
+        # sibling python-glean and know that it's using the glean we
+        # installed, even in a virtualenv etc.
+        install('python-glean.template',
+                os.path.join(script_dir, 'python-glean'),
+                mode='0755', replacements=replacements)
 
     # needs to go first because gentoo can have systemd along side openrc
     if os.path.exists('/etc/gentoo-release'):
