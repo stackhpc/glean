@@ -1,10 +1,17 @@
 - project:
-    templates:
-      - openstack-python-jobs-no-constraints
-      - openstack-python35-jobs-no-constraints
-      - openstack-python36-jobs-no-constraints
     check:
       jobs:
+        - tox-pep8
+        - tox-py27:
+            nodeset: ubuntu-bionic
+        - tox-py36:
+            nodeset: ubuntu-bionic
+        - tox-py38:
+            nodeset: ubuntu-focal
+        - tox-py310:
+            nodeset: ubuntu-jammy
+        - tox-py311:
+            nodeset: debian-bookworm
         - opendev-buildset-registry
         - nodepool-build-image-siblings
         - dib-nodepool-functional-openstack-gentoo-src:
@@ -19,6 +26,17 @@
         - dib-nodepool-functional-openstack-rockylinux-8-containerfile-src
     gate:
       jobs:
+        - tox-pep8
+        - tox-py27:
+            nodeset: ubuntu-bionic
+        - tox-py36:
+            nodeset: ubuntu-bionic
+        - tox-py38:
+            nodeset: ubuntu-focal
+        - tox-py310:
+            nodeset: ubuntu-jammy
+        - tox-py311:
+            nodeset: debian-bookworm
         - opendev-buildset-registry
         - nodepool-build-image-siblings
         - dib-nodepool-functional-openstack-centos-7-src
@@ -29,7 +47,6 @@
         - dib-nodepool-functional-openstack-ubuntu-focal-src
         - dib-nodepool-functional-openstack-debian-bullseye-src
         - dib-nodepool-functional-openstack-rockylinux-8-containerfile-src
-    experimental:
+    post:
       jobs:
-        - opendev-buildset-registry
-        - nodepool-build-image-siblings
+        - publish-openstack-python-branch-tarball
