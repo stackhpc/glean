@@ -16,8 +16,6 @@
         - nodepool-build-image-siblings
         - dib-nodepool-functional-openstack-gentoo-src:
             voting: false
-        - dib-nodepool-functional-openstack-centos-7-src
-        - dib-nodepool-functional-openstack-centos-8-stream-src
         - dib-nodepool-functional-openstack-centos-9-stream-src
         - dib-nodepool-functional-openstack-ubuntu-xenial-src
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
@@ -39,8 +37,6 @@
             nodeset: debian-bookworm
         - opendev-buildset-registry
         - nodepool-build-image-siblings
-        - dib-nodepool-functional-openstack-centos-7-src
-        - dib-nodepool-functional-openstack-centos-8-stream-src
         - dib-nodepool-functional-openstack-centos-9-stream-src
         - dib-nodepool-functional-openstack-ubuntu-xenial-src
         - dib-nodepool-functional-openstack-ubuntu-bionic-src
