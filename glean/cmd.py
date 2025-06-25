@@ -131,7 +131,6 @@ def _network_config(args):
         # Automatically generated, do not edit
         [connection]
         id={id}
-        uuid=
         type=802-3-ethernet
 
         [ipv4]

@@ -5,7 +5,6 @@ nameserver 199.204.47.54
 # Automatically generated, do not edit
 [connection]
 id=ens3
-uuid=
 type=802-3-ethernet
 
 [ipv4]

@@ -5,7 +5,6 @@ nameserver 69.20.0.164
 # Automatically generated, do not edit
 [connection]
 id=eth0
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -25,7 +24,6 @@ route2=fd30::/48,fe80::f001
 # Automatically generated, do not edit
 [connection]
 id=eth1
-uuid=
 type=802-3-ethernet
 
 [ipv4]

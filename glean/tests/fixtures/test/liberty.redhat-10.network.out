@@ -5,7 +5,6 @@ nameserver 72.3.128.240
 # Automatically generated, do not edit
 [connection]
 id=eth0
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -19,7 +18,6 @@ mac_address=bc:76:4e:01:62:86
 # Automatically generated, do not edit
 [connection]
 id=eth1
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -34,7 +32,6 @@ mac_address=bc:76:4e:05:7b:06
 # Automatically generated, do not edit
 [connection]
 id=eth3
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -46,7 +43,6 @@ mac_address=bc:76:4e:12:a4:bb
 # Automatically generated, do not edit
 [connection]
 id=eth4.25
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -62,7 +58,6 @@ parent=ethwithvlan
 # Automatically generated, do not edit
 [connection]
 id=eth4.26
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -78,7 +73,6 @@ parent=ethwithvlan
 # Automatically generated, do not edit
 [connection]
 id=eth5
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -92,7 +86,6 @@ slave-type=bond
 # Automatically generated, do not edit
 [connection]
 id=eth6
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -106,7 +99,6 @@ slave-type=bond
 # Automatically generated, do not edit
 [connection]
 id=bond0
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -119,7 +111,6 @@ type=bond
 # Automatically generated, do not edit
 [connection]
 id=eth7
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -133,7 +124,6 @@ slave-type=bond
 # Automatically generated, do not edit
 [connection]
 id=eth8
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -147,7 +137,6 @@ slave-type=bond
 # Automatically generated, do not edit
 [connection]
 id=bond1
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -160,7 +149,6 @@ type=bond
 # Automatically generated, do not edit
 [connection]
 id=bond1.27
-uuid=
 type=802-3-ethernet
 
 [ipv4]

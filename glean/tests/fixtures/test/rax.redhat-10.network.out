@@ -5,7 +5,6 @@ nameserver 72.3.128.240
 # Automatically generated, do not edit
 [connection]
 id=eth0
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -19,7 +18,6 @@ mac_address=bc:76:4e:01:62:86
 # Automatically generated, do not edit
 [connection]
 id=eth1
-uuid=
 type=802-3-ethernet
 
 [ipv4]
@@ -34,7 +32,6 @@ mac_address=bc:76:4e:05:7b:06
 # Automatically generated, do not edit
 [connection]
 id=eth3
-uuid=
 type=802-3-ethernet
 
 [ipv4]
