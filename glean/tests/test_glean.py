@@ -176,7 +176,9 @@ class TestGlean(base.BaseTestCase):
                 new_callable=mock.Mock)
     @mock.patch('glean.cmd.is_keyfile_format', return_value=False,
                 new_callable=mock.Mock)
+    @mock.patch('os.chmod', return_value=0, new_callable=mock.Mock)
     def _assert_distro_provider(self, distro, provider, interface,
+                                mock_os_chmod,
                                 mock_is_keyfile,
                                 mock_vendor_linux_distribution,
                                 mock_open,

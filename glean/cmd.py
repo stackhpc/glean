@@ -1394,6 +1394,7 @@ def finish_files(files_to_write, args):
                 log.debug("Writing output file : %s" % k)
                 with safe_open(k, 'w') as outfile:
                     outfile.write(files_to_write[k])
+
                 log.debug(" ... done")
                 break
             except IOError as e:
@@ -1411,6 +1412,10 @@ def finish_files(files_to_write, args):
                     break
                 else:
                     raise
+
+        if '/etc/NetworkManager/system-connections/' in k:
+            # NetworkManager refuses to load nmconnection files with 644 perms
+            os.chmod(k, 0o600)
 
 
 def is_interface_live(interface, sys_root):
