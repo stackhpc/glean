@@ -22,6 +22,7 @@ import errno
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import textwrap
@@ -75,6 +76,22 @@ def _exists_rh_interface(name, distro):
     return os.path.exists(file_to_check)
 
 
+def _exists_rh_keyfile_interface(name):
+    file_to_check = \
+        '/etc/NetworkManager/system-connections/{name}.nmconnection'.format(
+            name=name)
+    return os.path.exists(file_to_check)
+
+
+# Since RHEL10/CentOS 10 keyfiles format configs are madatory
+def is_keyfile_format():
+    if "el10" in distro.os_release_info().get("platform_id", ""):
+        keyfiles = True
+    else:
+        keyfiles = False
+    return keyfiles
+
+
 def _is_suse(distro):
     # 'distro could be any of suse, opensuse,
     # opensuse-leap, opensuse-tumbleweed, sles
@@ -108,6 +125,19 @@ def _network_config(args):
         BOOTPROTO={bootproto}
         LLADDR={hwaddr}
         STARTMODE=auto
+        """)
+    elif is_keyfile_format():
+        preamble = textwrap.dedent("""\
+        # Automatically generated, do not edit
+        [connection]
+        id={id}
+        type=802-3-ethernet
+
+        [ipv4]
+        method={method}
+
+        [802-3-ethernet]
+        mac_address={mac_address}
         """)
     else:
         preamble = textwrap.dedent("""\
@@ -146,6 +176,14 @@ def _set_rh_bonding(name, interface, distro, results):
             # to hotplug
             results = results.replace("=auto", "=hotplug")
 
+    elif is_keyfile_format():
+        if 'bond_slaves' in interface:
+            results += "type=bond\n"
+
+        else:
+            results += "master={0}\n".format(interface['bond_master'])
+            results += "slave-type=bond\n"
+
     else:
         # RedHat does not add any specific configuration to the master
         # interface. All configuration is done in the slave ifcfg files.
@@ -168,6 +206,10 @@ def _set_rh_vlan(name, interface, distro):
         results += "VLAN_ID={vlan_id}\n".format(vlan_id=interface['vlan_id'])
         results += "ETHERDEVICE={etherdevice}\n".format(
             etherdevice=name.split('.')[0])
+    elif is_keyfile_format():
+        results += "\n[vlan]\n"
+        results += "id={vlan_id}\n".format(vlan_id=interface['vlan_id'])
+        results += "parent={parent}\n".format(parent=interface['vlan_link'])
     else:
         results += "VLAN=yes\n"
 
@@ -178,7 +220,7 @@ def _write_rh_v6_interface(name, interface, args, files):
     config_file = _network_files(args.distro)["ifcfg"] + '-%s' % name
     # We should already have this config file key key, we need to
     # append to it
-    assert(config_file in files)
+    assert (config_file in files)
     config_data = files[config_file]
     config_data += 'IPV6INIT=yes\n'
     config_data += 'IPV6_PRIVACY=no\n'
@@ -217,6 +259,53 @@ def _write_rh_v6_interface(name, interface, args, files):
         files[route6_file] = routes
 
     files[config_file] = config_data
+    return files
+
+
+def _write_rh_v6_keyfile_interface(name, interface, args, files):
+    filename = \
+        '/etc/NetworkManager/system-connections/{name}.nmconnection'.format(
+            name=name)
+    if interface['type'] == 'ipv6_slaac' and not interface['ip_address']:
+        results = ""
+        results += "[ipv6]\n"
+        results += "method=auto\n"
+    else:
+        results = ""
+        results += "[ipv6]\n"
+        results += "method=manual\n"
+        try:
+            netmask = utils.ipv6_netmask_length(interface['netmask'])
+        except Exception:
+            logging.error("Invalid netmask format %s." % interface['netmask'])
+        results += "address1={address}/{netmask}\n".format(
+            address=interface['ip_address'], netmask=netmask)
+
+    if interface.get('routes', ()):
+        routes = []
+        route_counter = 0
+        for route in interface.get('routes', ()):
+            route_counter += 1
+            ipv6_netmask = utils.ipv6_netmask_length(route['netmask'])
+            full_route = "route" + str(route_counter) + "=" \
+                + route['network'] + "/" + str(ipv6_netmask) \
+                + ',' + route['gateway']
+
+            routes.append(full_route)
+        if routes:
+            route_match = re.search(r"address.*/[0-9][0-9]\n", results)
+            if not route_match:
+                route_match = re.search(r"method=*\n", results)
+            str_routes = ""
+            for i in range(len(routes)):
+                str_routes += routes[i] + "\n"
+            results = results[:route_match.end()] + str_routes + \
+                results[route_match.end():]
+
+    # append ipv6 config at the end
+    if results:
+        files[filename] = files[filename] + "\n" + results
+
     return files
 
 
@@ -284,11 +373,13 @@ def _write_rh_dhcp(name, interface, args):
     return {filename: results}
 
 
-def _write_rh_manual(name, interface, args):
+def _write_rh_keyfile_dhcp(name, interface, args):
     distro = args.distro
-    filename = _network_files(distro)["ifcfg"] + '-{name}'.format(name=name)
+    filename = \
+        '/etc/NetworkManager/system-connections/{name}.nmconnection'.format(
+            name=name)
     results = _network_config(args).format(
-        bootproto="none", name=name, hwaddr=interface['mac_address'])
+        method="auto", id=name, mac_address=interface['mac_address'])
     results += _set_rh_vlan(name, interface, distro)
     # set_rh_bonding takes results as argument so we need to assign
     # the return value, not append it
@@ -297,9 +388,76 @@ def _write_rh_manual(name, interface, args):
     return {filename: results}
 
 
-def write_redhat_interfaces(interfaces, sys_interfaces, args):
-    files_to_write = dict()
+def _write_rh_manual(name, interface, args):
+    distro = args.distro
+    if is_keyfile_format():
+        filename = \
+            '/etc/NetworkManager/system-connections/{name}.nmconnection' \
+            .format(name=name)
+        results = _network_config(args).format(
+            method="manual", id=name, mac_address=interface['mac_address'])
+    else:
+        filename = _network_files(distro)["ifcfg"] + '-{name}'.format(
+            name=name)
+        results = _network_config(args).format(
+            bootproto="none", name=name, hwaddr=interface['mac_address'])
+    results += _set_rh_vlan(name, interface, distro)
+    # set_rh_bonding takes results as argument so we need to assign
+    # the return value, not append it
+    results = _set_rh_bonding(name, interface, distro, results)
 
+    return {filename: results}
+
+
+def _write_rh_keyfile_interface(_name, interface, args):
+    # NOTE(mnasiadka): Importing here to maintain py2.7 compatibility
+    import ipaddress
+
+    distro = args.distro
+    files_to_write = dict()
+    filename = \
+        '/etc/NetworkManager/system-connections/{name}.nmconnection'.format(
+            name=_name)
+    results = _network_config(args).format(
+        method="manual", id=_name, mac_address=interface['mac_address'])
+
+    # insert value after specific option using slicing
+    address = interface['ip_address'] + "/" + interface['netmask']
+    cidr_address = 'address1=%s' % ipaddress.ip_interface(
+        address).with_prefixlen
+    match = re.search(r'manual\n', results)
+    results = results[:match.end()] + cidr_address + \
+        "\n" + results[match.end():]
+    results += _set_rh_vlan(_name, interface, distro)
+
+    results = _set_rh_bonding(_name, interface, distro, results)
+
+    # format:comma separated list of routes in [ipv4]
+    routes = []
+    route_counter = 0
+    for route in interface.get('routes', ()):
+        route_counter += 1
+        route_cidr_address = ipaddress.ip_interface(
+            route['network'] + "/" + route['netmask']).with_prefixlen
+        full_route = "route" + str(route_counter) + "=" + \
+            route_cidr_address + ',' + route['gateway']
+        routes.append(full_route)
+
+    if routes:
+        route_match = re.search(r"address.*/[0-9][0-9]\n", results)
+        str_routes = ""
+        for i in range(len(routes)):
+            str_routes += routes[i] + "\n"
+        results = results[:route_match.end()] + \
+            str_routes + results[route_match.end():]
+
+    files_to_write[filename] = results
+    return files_to_write
+
+
+def write_redhat_interfaces(interfaces, sys_interfaces, args):
+
+    files_to_write = dict()
     # Strip out ignored interfaces
     _interfaces = {}
     for iname, interface in interfaces.items():
@@ -322,7 +480,6 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
 
         _interfaces[iname] = interface
     interfaces = _interfaces
-
     # Sort the interfaces by id so that we'll have consistent output order
     _interfaces_by_sys_name = defaultdict(list)
     for iname, interface in sorted(
@@ -372,18 +529,33 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
             logging.debug("Processing interface %s/%s" %
                           (_name, interface['type']))
             if interface['type'] == 'ipv4':
-                files_to_write.update(
-                    _write_rh_interface(_name, interface, args))
+                if is_keyfile_format():
+                    files_to_write.update(
+                        _write_rh_keyfile_interface(_name, interface, args))
+                else:
+                    files_to_write.update(
+                        _write_rh_interface(_name, interface, args))
             elif interface['type'] == 'ipv4_dhcp':
-                files_to_write.update(
-                    _write_rh_dhcp(_name, interface, args))
+                if is_keyfile_format():
+                    files_to_write.update(
+                        _write_rh_keyfile_dhcp(_name, interface, args))
+                else:
+                    files_to_write.update(
+                        _write_rh_dhcp(_name, interface, args))
             elif interface['type'] == 'manual':
                 files_to_write.update(
                     _write_rh_manual(_name, interface, args))
             elif interface['type'] in ('ipv6', 'ipv6_slaac'):
-                files_to_write.update(
-                    _write_rh_v6_interface(_name,
-                                           interface, args, files_to_write))
+                if is_keyfile_format():
+                    files_to_write.update(
+                        _write_rh_v6_keyfile_interface(_name,
+                                                       interface, args,
+                                                       files_to_write))
+                else:
+                    files_to_write.update(
+                        _write_rh_v6_interface(_name,
+                                               interface, args,
+                                               files_to_write))
             else:
                 logging.error(
                     "Unhandled interface %s/%s" % (_name, interface['type']))
@@ -396,10 +568,15 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
     # back to simple DHCP
     for mac, iname in sorted(
             sys_interfaces.items(), key=lambda x: x[1]):
-        if _exists_rh_interface(iname, args.distro):
-            # This interface already has a config file, move on
-            log.debug("%s already has config file, skipping" % iname)
-            continue
+        if is_keyfile_format:
+            if _exists_rh_keyfile_interface(iname):
+                log.debug("%s already has config file, skipping" % iname)
+                continue
+        else:
+            if _exists_rh_interface(iname, args.distro):
+                # This interface already has a config file, move on
+                log.debug("%s already has config file, skipping" % iname)
+                continue
         inter_macs = [intf['mac_address'] for intf in interfaces.values()]
         link_macs = [intf.get('link_mac') for intf in interfaces.values()
                      if 'vlan_id' in intf]
@@ -407,8 +584,13 @@ def write_redhat_interfaces(interfaces, sys_interfaces, args):
             # We have a config drive config, move on
             log.debug("%s configured via config-drive" % mac)
             continue
-        files_to_write.update(_write_rh_dhcp(iname, {'mac_address': mac},
-                                             args))
+        if is_keyfile_format():
+            files_to_write.update(
+                _write_rh_keyfile_dhcp(iname, {'mac_address': mac}, args))
+        else:
+            files_to_write.update(
+                _write_rh_dhcp(iname, {'mac_address': mac}, args))
+
     return files_to_write
 
 
@@ -1211,6 +1393,7 @@ def finish_files(files_to_write, args):
                 log.debug("Writing output file : %s" % k)
                 with safe_open(k, 'w') as outfile:
                     outfile.write(files_to_write[k])
+
                 log.debug(" ... done")
                 break
             except IOError as e:
@@ -1228,6 +1411,10 @@ def finish_files(files_to_write, args):
                     break
                 else:
                     raise
+
+        if '/etc/NetworkManager/system-connections/' in k:
+            # NetworkManager refuses to load nmconnection files with 644 perms
+            os.chmod(k, 0o600)
 
 
 def is_interface_live(interface, sys_root):
@@ -1427,7 +1614,6 @@ def get_network_info(args):
     network_info_file = '%s/openstack/latest/network_info.json' % config_drive
     network_data_file = '%s/openstack/latest/network_data.json' % config_drive
     vendor_data_file = '%s/openstack/latest/vendor_data.json' % config_drive
-
     network_info = {}
     if os.path.exists(network_info_file):
         log.debug("Found network_info file %s" % network_info_file)
@@ -1628,7 +1814,7 @@ def main(argv=None):
     log.debug("Starting glean")
     log.debug("Detected distro : %s" % args.distro)
     log.debug("Configuring %s NetworkManager" %
-              "with" if args.use_nm else "without")
+              ("with" if args.use_nm else "without"))
 
     with systemlock.Lock('/tmp/glean.lock'):
         config_drive = os.path.join(args.root, 'mnt/config')

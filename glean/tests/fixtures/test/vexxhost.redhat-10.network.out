@@ -1,0 +1,18 @@
+### Write /etc/resolv.conf
+nameserver 199.204.44.24
+nameserver 199.204.47.54
+### Write /etc/NetworkManager/system-connections/ens3.nmconnection
+# Automatically generated, do not edit
+[connection]
+id=ens3
+type=802-3-ethernet
+
+[ipv4]
+method=auto
+
+[802-3-ethernet]
+mac_address=fa:16:3e:d1:1f:b2
+
+[ipv6]
+method=manual
+address1=2604:e100:1:0:f816:3eff:fed1:1fb2/64

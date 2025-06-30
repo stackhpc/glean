@@ -20,19 +20,20 @@ import os
 try:
     from unittest import mock
 except ImportError:
-    import mock
+    import mock # noqa H216
 
 from oslotest import base
 from testscenarios import load_tests_apply_scenarios as load_tests  # noqa
 
+from glean._vendor import distro as vendor_distro  # noqa
 from glean import cmd
 
 
 sample_data_path = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'fixtures')
 
-distros = ['Ubuntu', 'Debian', 'Fedora', 'RedHat', 'CentOS', 'Gentoo',
-           'openSUSE', 'networkd', 'Rocky']
+distros = ['Ubuntu', 'Debian', 'Fedora', 'RedHat', 'CentOS', 'CentOS-10',
+           'Gentoo', 'openSUSE', 'networkd', 'Rocky']
 styles = ['hp', 'rax', 'rax-iad', 'liberty', 'nokey', 'vexxhost']
 
 ips = {'hp': '127.0.1.1',
@@ -95,7 +96,8 @@ class TestGlean(base.BaseTestCase):
         # called later
         mock_dirs = ('/etc/network', '/etc/sysconfig/network-scripts',
                      '/etc/conf.d', '/etc/init.d', '/etc/sysconfig/network',
-                     '/etc/systemd/network')
+                     '/etc/systemd/network',
+                     '/etc/NetworkManager/system-connections')
         mock_files = ('/etc/resolv.conf', '/etc/hostname', '/etc/hosts',
                       '/etc/systemd/resolved.conf', '/bin/systemctl')
         if (path.startswith(mock_dirs) or path in mock_files):
@@ -170,7 +172,15 @@ class TestGlean(base.BaseTestCase):
     @mock.patch('os.listdir', new_callable=mock.Mock)
     @mock.patch('os.system', return_value=0, new_callable=mock.Mock)
     @mock.patch('glean.cmd.open', new_callable=mock.Mock)
+    @mock.patch('glean._vendor.distro.linux_distribution',
+                new_callable=mock.Mock)
+    @mock.patch('glean.cmd.is_keyfile_format', return_value=False,
+                new_callable=mock.Mock)
+    @mock.patch('os.chmod', return_value=0, new_callable=mock.Mock)
     def _assert_distro_provider(self, distro, provider, interface,
+                                mock_os_chmod,
+                                mock_is_keyfile,
+                                mock_vendor_linux_distribution,
                                 mock_open,
                                 mock_os_system,
                                 mock_os_listdir,
@@ -208,6 +218,18 @@ class TestGlean(base.BaseTestCase):
         mock_os_system.side_effect = functools.partial(
             self.os_system_side_effect, distro)
 
+        # distro versions handling
+        if distro.__contains__("-"):
+            version = distro.rsplit("-", 1)[1]
+            distro = distro.rsplit("-", 1)[0]
+            mock_vendor_linux_distribution.return_value = [distro, version]
+            if distro in ['CentOS', 'Rocky', 'RHEL'] and version == "10":
+                mock_is_keyfile.return_value = True
+                use_nm = True
+        else:
+            version = None
+            mock_vendor_linux_distribution.return_value = [distro]
+
         # default args
         argv = ['--hostname']
 
@@ -222,7 +244,13 @@ class TestGlean(base.BaseTestCase):
 
         cmd.main(argv)
 
-        output_filename = '%s.%s.network.out' % (provider, distro.lower())
+        if version:
+            output_filename = '%s.%s-%s.network.out' % (provider,
+                                                        distro.lower(),
+                                                        version)
+        else:
+            output_filename = '%s.%s.network.out' % (provider, distro.lower())
+
         output_path = os.path.join(sample_data_path, 'test', output_filename)
         if not skip_dns:
             if os.path.exists(output_path + '.dns'):

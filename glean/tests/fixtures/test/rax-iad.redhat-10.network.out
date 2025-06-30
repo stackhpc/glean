@@ -1,0 +1,36 @@
+### Write /etc/resolv.conf
+nameserver 69.20.0.196
+nameserver 69.20.0.164
+### Write /etc/NetworkManager/system-connections/eth0.nmconnection
+# Automatically generated, do not edit
+[connection]
+id=eth0
+type=802-3-ethernet
+
+[ipv4]
+method=manual
+address1=146.20.110.113/24
+route1=0.0.0.0/0,146.20.110.1
+
+[802-3-ethernet]
+mac_address=bc:76:4e:20:d7:2f
+
+[ipv6]
+method=manual
+address1=2001:4802:7807:103:be76:4eff:fe20:d72f/64
+route1=::/0,fe80::def
+route2=fd30::/48,fe80::f001
+### Write /etc/NetworkManager/system-connections/eth1.nmconnection
+# Automatically generated, do not edit
+[connection]
+id=eth1
+type=802-3-ethernet
+
+[ipv4]
+method=manual
+address1=10.210.32.174/19
+route1=10.176.0.0/12,10.210.32.1
+route2=10.208.0.0/12,10.210.32.1
+
+[802-3-ethernet]
+mac_address=bc:76:4e:20:d7:33
